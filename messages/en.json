@@ -1,6 +1,7 @@
 {
   "HomePage": {
-    "title": "Hello world!",
+    "name": "Yushko Nazar",
+    "role": "Fullstack Developer",
     "featuredProjects": "Featured projects"
   },
   "ProjectPage": {

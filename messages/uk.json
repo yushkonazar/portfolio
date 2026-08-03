@@ -1,6 +1,7 @@
 {
   "HomePage": {
-    "title": "Привіт, світ!",
+    "name": "Yushko Nazar",
+    "role": "Fullstack-розробник",
     "featuredProjects": "Ключові проєкти"
   },
   "ProjectPage": {

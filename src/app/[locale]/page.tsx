@@ -11,9 +11,12 @@ export default function Home() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        <h1 className="px-6 py-24 text-center text-3xl font-semibold">
-          {t("title")}
-        </h1>
+        <div className="px-6 py-24 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight">
+            {t("name")}
+          </h1>
+          <p className="text-muted-foreground mt-3 text-lg">{t("role")}</p>
+        </div>
 
         <section className="mx-auto max-w-3xl px-6 pb-24">
           <h2 className="text-sm font-medium tracking-wide uppercase">
