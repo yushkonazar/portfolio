@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { SiteBackground } from "@/components/site-background";
 import "./globals.css";
 
 const inter = Inter({
@@ -39,7 +40,10 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={inter.variable}>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <SiteBackground />
+        <NextIntlClientProvider>
+          <div className="relative z-10">{children}</div>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
