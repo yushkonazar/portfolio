@@ -94,10 +94,10 @@ const AMBIENT_BURSTS = 3; // concurrent burst clusters, not individual arms
 const HARD_CAP = 34; // total arms across every live cluster
 
 const FIRST_SPAWN_MS = 500;
-// Shorter than before — bursts should appear more often — while
+// Shorter still on request — bursts should appear more often — while
 // AMBIENT_BURSTS above still caps how many are ever live at once.
-const SPAWN_MIN_MS = 1600;
-const SPAWN_MAX_MS = 3200;
+const SPAWN_MIN_MS = 950;
+const SPAWN_MAX_MS = 1900;
 const MAJOR_MIN_MS = 20000;
 const MAJOR_MAX_MS = 40000;
 
@@ -541,18 +541,23 @@ export function SiteBackground() {
     // Width by generation: the main line reads as the thicker trace, each
     // fork starting noticeably thinner than its parent.
     const DEPTH_SCALE = [1, 0.72, 0.52];
+    // Base stroke widths (glow / dark core / ember), before depth+major
+    // scaling — bumped up twice now on direct "thicker" feedback.
+    const GLOW_WIDTH = 11;
+    const CORE_WIDTH = 3.2;
+    const EMBER_WIDTH = 1.7;
 
     function strokeLayers(x1: number, y1: number, x2: number, y2: number, w: number, alpha: number) {
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.lineWidth = 7 * w;
+      ctx.lineWidth = GLOW_WIDTH * w;
       ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.05 * alpha})`;
       ctx.stroke();
-      ctx.lineWidth = 1.6 * w;
+      ctx.lineWidth = CORE_WIDTH * w;
       ctx.strokeStyle = `rgba(20, 14, 10, ${0.85 * alpha})`;
       ctx.stroke();
-      ctx.lineWidth = 0.8 * w;
+      ctx.lineWidth = EMBER_WIDTH * w;
       ctx.strokeStyle = `rgba(${br}, ${bg}, ${bb}, ${0.55 * alpha})`;
       ctx.stroke();
     }
@@ -566,18 +571,18 @@ export function SiteBackground() {
 
       const isRoot = fissure.depth === 0;
       const depthScale = DEPTH_SCALE[Math.min(fissure.depth, DEPTH_SCALE.length - 1)];
-      const baseScale = (fissure.major ? 1.6 : 1) * depthScale;
+      const baseScale = (fissure.major ? 1.9 : 1) * depthScale;
 
       if (isRoot) {
         // The main line: a solid width along its whole run.
         const spine = centreline(fissure);
-        ctx.lineWidth = 7 * baseScale;
+        ctx.lineWidth = GLOW_WIDTH * baseScale;
         ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.05 * alpha})`;
         ctx.stroke(spine);
-        ctx.lineWidth = 1.6 * baseScale;
+        ctx.lineWidth = CORE_WIDTH * baseScale;
         ctx.strokeStyle = `rgba(20, 14, 10, ${0.85 * alpha})`;
         ctx.stroke(spine);
-        ctx.lineWidth = 0.8 * baseScale;
+        ctx.lineWidth = EMBER_WIDTH * baseScale;
         ctx.strokeStyle = `rgba(${br}, ${bg}, ${bb}, ${0.55 * alpha})`;
         ctx.stroke(spine);
       } else {
