@@ -10,5 +10,9 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "routes": [
+    { "pattern": "yushko.dev", "custom_domain": true },
+    { "pattern": "www.yushko.dev", "custom_domain": true }
+  ]
 }
