@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Near-black base, matched against the avatar photo (exact shade to be
+     fine-tuned once the final crop lands — see .workspace/journal.md).
+     Avoiding pure #000 per design-system guidance (OLED smear / flat look). */
+  --color-background: #050505;
+  --color-foreground: #fafafa;
+
+  --color-card: #0f0f0f;
+  --color-card-foreground: #fafafa;
+
+  --color-muted: #171717;
+  --color-muted-foreground: #a1a1aa;
+
+  --color-border: #27272a;
+
+  /* Ember/amber accent — ties the palette to the hero crack-shader glow */
+  --color-accent: #d97706;
+  --color-accent-bright: #f59e0b;
+  --color-accent-foreground: #050505;
+
+  --color-destructive: #ef4444;
+  --color-ring: #d97706;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "HomePage": {
+    "title": "Привіт, світ!",
+    "featuredProjects": "Ключові проєкти"
+  },
+  "ProjectPage": {
+    "stack": "Стек",
+    "liveDemo": "Демо",
+    "sourceCode": "Код"
+  }
+}

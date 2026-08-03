@@ -1,0 +1,11 @@
+{
+  "HomePage": {
+    "title": "Hello world!",
+    "featuredProjects": "Featured projects"
+  },
+  "ProjectPage": {
+    "stack": "Stack",
+    "liveDemo": "Live demo",
+    "sourceCode": "Source code"
+  }
+}
