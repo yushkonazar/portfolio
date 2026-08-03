@@ -34,6 +34,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# wrangler local secrets (server-side, used via getCloudflareContext().env)
+.dev.vars*
+!.dev.vars.example
+
+
 # vercel
 .vercel
 

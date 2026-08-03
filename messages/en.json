@@ -8,5 +8,15 @@
     "stack": "Stack",
     "liveDemo": "Live demo",
     "sourceCode": "Source code"
+  },
+  "ContactForm": {
+    "heading": "Get in touch",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "submit": "Send message",
+    "submitting": "Sending…",
+    "success": "Thanks — your message is on its way.",
+    "error": "Something went wrong. Please try again or email hello@yushko.dev directly."
   }
 }

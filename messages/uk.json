@@ -8,5 +8,15 @@
     "stack": "Стек",
     "liveDemo": "Демо",
     "sourceCode": "Код"
+  },
+  "ContactForm": {
+    "heading": "Зв'язатися",
+    "name": "Ім'я",
+    "email": "Email",
+    "message": "Повідомлення",
+    "submit": "Надіслати",
+    "submitting": "Надсилаємо…",
+    "success": "Дякую — повідомлення надіслано.",
+    "error": "Щось пішло не так. Спробуй ще раз або напиши напряму на hello@yushko.dev."
   }
 }

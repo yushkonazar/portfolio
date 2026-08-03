@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { ContactForm } from "@/components/contact-form";
 import { Link } from "@/i18n/navigation";
 import { projects } from "@/lib/projects";
 
@@ -38,6 +39,8 @@ export default function Home() {
             ))}
           </ul>
         </section>
+
+        <ContactForm />
       </main>
       <Footer />
     </div>

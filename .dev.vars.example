@@ -1,0 +1,12 @@
+# Copy to .dev.vars and fill in real values. Never commit .dev.vars.
+# These are server-only secrets, read via getCloudflareContext().env
+# (the Wrangler/OpenNext convention — NOT process.env, NOT .env).
+# Production equivalent: `wrangler secret put <NAME>` for each one.
+
+# Cloudflare Turnstile secret key — verifies the widget token server-side
+# Dashboard → Turnstile → your widget
+TURNSTILE_SECRET_KEY=
+
+# Resend API key — sends the contact form email
+# resend.com → API Keys
+RESEND_API_KEY=
