@@ -46,3 +46,6 @@ next-env.d.ts
 
 # personal workspace (notes, journal, source assets — not for the public repo)
 .workspace/
+
+# local tooling config — kept out of the public repo on purpose
+.claude/
