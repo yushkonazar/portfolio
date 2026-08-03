@@ -7,15 +7,15 @@ import { useEffect, useRef } from "react";
  * field, propagate outward, hold, then close. Each fissure is finite —
  * nothing loops forever.
  *
- * Modelled directly on a real reference (a stock "surface impact crack"
- * clip, examined frame by frame — see .workspace/journal.md), not on
- * geological faults. That reference is thin and roughly constant-width
- * rather than a tapered opening, jagged — short straight-ish runs meeting at
- * sharp angles, not a smooth curve — dense with branches concentrated near
- * the burst point, and essentially fully formed in under a second. The
- * anti-coil bend budget and arrest-on-contact from the previous pass carry
- * over unchanged: those solved real structural problems independent of which
- * visual reference is driving the geometry.
+ * Started from a real reference (a stock "surface impact crack" clip,
+ * examined frame by frame — see .workspace/journal.md), then tuned away from
+ * it on direct feedback: slower growth, gentler turns, and branching spread
+ * evenly along the whole trace rather than concentrated near the burst
+ * point. It's still thin and roughly constant-width rather than a tapered
+ * opening, and jagged — short straight-ish runs meeting at sharp angles, not
+ * a smooth curve. The anti-coil bend budget and arrest-on-contact carry over
+ * unchanged: those solved real structural problems independent of pacing or
+ * branch density.
  */
 
 type Point = { x: number; y: number };
@@ -50,10 +50,13 @@ const STEP = 6; // px between recorded vertices
 // not a smoothly curving line — re-rolling a "kink" target every few steps
 // and snapping toward it is what produces that, versus jitter applied every
 // single step which just reads as a wobbly curve.
-const KINK_MIN_STEPS = 3;
-const KINK_MAX_STEPS = 7;
+const KINK_MIN_STEPS = 4;
+const KINK_MAX_STEPS = 8;
 const KINK_STRENGTH = 0.55; // rad, ~31° — the sharp-angle character
-const KINK_SNAP = 0.75; // how much of the way to the kink target per step
+// Snapping toward each new kink over several steps instead of ~1 reads as a
+// smoother turn without smoothing away the sharp-angle character itself —
+// the *joint* eases in, the target angle is still a hard kink.
+const KINK_SNAP = 0.4;
 
 const FIELD_SCALE = 0.0011; // spatial frequency of the long-range bias
 const FIELD_DRIFT = 0.02;
@@ -69,7 +72,10 @@ const ARREST_DISTANCE = 6; // px — a fissure stops when it meets another
 const SELF_SKIP = 14; // own trailing vertices to ignore when testing contact
 const CELL = 12; // spatial hash cell size
 
-const BRANCH_CHANCE = 0.065; // density concentrates branching near the burst
+// Branching is uniform along the whole length (no taper toward the tip) —
+// side branches should keep coming off the main trace for its entire run,
+// not just near the burst point.
+const BRANCH_CHANCE = 0.095;
 const BRANCH_MIN_ANGLE = 0.3; // ~17°
 const BRANCH_MAX_ANGLE = 0.85; // ~49° — wide forks, close to the reference
 const BRANCH_GRACE = 6;
@@ -77,26 +83,28 @@ const MAX_DEPTH = 2;
 // Chance decides *where* a fissure forks; the budget decides *how many*
 // times — without it a long trace forks enough on length alone to saturate
 // the screen and the field never gets a quiet moment (measured last pass).
-const BRANCH_BUDGET = 5;
-const MAJOR_BRANCH_BUDGET = 7;
+const BRANCH_BUDGET = 8;
+const MAJOR_BRANCH_BUDGET = 11;
 const MIN_SPLAY_LENGTH = 60;
 
 const ARM_MIN = 2;
 const ARM_MAX = 3;
 
 const AMBIENT_BURSTS = 3; // concurrent burst clusters, not individual arms
-const HARD_CAP = 30; // total arms across every live cluster
+const HARD_CAP = 34; // total arms across every live cluster
 
 const FIRST_SPAWN_MS = 500;
-const SPAWN_MIN_MS = 2600;
-const SPAWN_MAX_MS = 5200;
+// Shorter than before — bursts should appear more often — while
+// AMBIENT_BURSTS above still caps how many are ever live at once.
+const SPAWN_MIN_MS = 1600;
+const SPAWN_MAX_MS = 3200;
 const MAJOR_MIN_MS = 20000;
 const MAJOR_MAX_MS = 40000;
 
-// The reference clip's whole crack forms in ~0.8s; ambient speed targets
-// growth phases in roughly that range for a typical arm length.
-const SPEED_MIN = 420;
-const SPEED_MAX = 620;
+// Slower and gentler than the reference clip's near-instant reveal — traded
+// away deliberately on request, in favour of motion that reads as smoother.
+const SPEED_MIN = 200;
+const SPEED_MAX = 300;
 
 const FADE_IN_MS = 90;
 const HOLD_MIN_MS = 2800;
@@ -462,14 +470,14 @@ export function SiteBackground() {
         fissure.points.push(next);
         fissure.grown += STEP;
 
-        // Branch density tapers with distance from the burst point, matching
-        // the reference: dense forking near the origin, sparse near the tips.
-        const progress = fissure.grown / Math.max(fissure.target, 1);
+        // Flat probability along the whole run — no tapering by distance
+        // from the burst point, on request: side branches should keep
+        // coming off the main trace for its entire length.
         const canBranch =
           fissure.depth < MAX_DEPTH &&
           fissure.branchBudget > 0 &&
           liveArms < HARD_CAP &&
-          Math.random() < BRANCH_CHANCE * (1 - progress * 0.7);
+          Math.random() < BRANCH_CHANCE;
 
         if (canBranch) {
           fissure.branchBudget--;
