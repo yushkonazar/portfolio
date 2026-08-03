@@ -3,75 +3,100 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Site-wide backdrop: fractures that nucleate on a black field, propagate from
- * A to B, hold, then fade out. Each crack is finite — nothing loops forever.
+ * Site-wide backdrop: ground fissures that open on a black field, propagate
+ * from A to B, hold, then close. Each fissure is finite — nothing loops.
  *
- * Direction is not random. A slowly evolving stress field decides the preferred
- * orientation at every point, so fractures in the same region line up with each
- * other the way they would in a real material. The pointer bends that field
- * locally, and a click concentrates enough stress to nucleate on the spot.
+ * Modelled on geological faults rather than lightning, which drives three
+ * choices: a fissure is an opening with width (widest mid-span, tapering to
+ * nothing at both tips) rather than a stroked line; its curvature is strictly
+ * bounded so it reads as a fault trace and never coils; and it arrests on
+ * contact with an existing fissure, because a fracture cannot propagate across
+ * a free surface. That last rule is also what makes strands split and rejoin
+ * the way real fault systems anastomose.
  */
 
 type Point = { x: number; y: number };
 
 type Phase = "growing" | "holding" | "fading";
 
-type Crack = {
+type Fissure = {
   points: Point[];
   angle: number;
+  baseAngle: number;
+  netTurn: number;
   grown: number;
   target: number;
   pending: number;
   depth: number;
+  commit: number; // steps before it starts obeying the field again
+  grace: number; // steps before contact can arrest it
   phase: Phase;
   phaseElapsed: number;
   holdFor: number;
   speed: number;
-  scale: number;
+  halfWidth: number;
   major: boolean;
   branchBudget: number;
-  pulse: number; // -1 idle, else 0..1 along the fracture
+  pulse: number; // -1 idle, else 0..1 along the fissure
 };
 
 type Flash = { x: number; y: number; elapsed: number };
 
 const STEP = 7; // px between recorded vertices
-const BASE_SPEED = 165; // px per second
-const JITTER = 0.12; // residual randomness on top of the field
-const FIELD_PULL = 0.34; // how strongly a fracture obeys the stress field
-const FIELD_SCALE = 0.0016; // spatial frequency of the field
-const FIELD_DRIFT = 0.02; // how fast the field itself evolves
+const BASE_SPEED = 150; // px per second
+const JITTER = 0.03; // residual roughness — faults are not jagged
+const FIELD_PULL = 0.12; // how strongly a fissure obeys the stress field
+const FIELD_SCALE = 0.0009; // spatial frequency (low = long, sweeping traces)
+const FIELD_DRIFT = 0.015;
+const MAX_TURN_PER_STEP = 0.05; // rad — bounds local curvature
+const MAX_NET_TURN = 0.85; // rad — bounds total bend, so it can never coil
 
-const POINTER_RADIUS = 260; // pointer stress concentration
-const POINTER_PULL = 0.75;
-const HEAT_RADIUS = 200; // pointer proximity that brightens a fracture
-const HEAT_BOOST = 1;
+const POINTER_RADIUS = 300;
+const POINTER_PULL = 0.6;
+const HEAT_RADIUS = 200;
+const HEAT_BOOST = 0.7;
 
-const BRANCH_CHANCE = 0.045;
+const ARREST_DISTANCE = 7; // px — a fissure stops when it meets another
+const SELF_SKIP = 16; // own trailing vertices to ignore when testing contact
+const CELL = 14; // spatial hash cell size
+
+const BRANCH_CHANCE = 0.05;
+const BRANCH_MIN_ANGLE = 0.18; // ~10°, shallow like real fault splays
+const BRANCH_MAX_ANGLE = 0.46; // ~26°
+const BRANCH_COMMIT = 10; // steps a splay travels before rejoining the field
+// A splay is born *on* its parent and burst arms all share one origin, so
+// without a grace period they arrest against their own source on step one.
+const BRANCH_GRACE = 10;
+const AMBIENT_GRACE = 2;
 const MAX_DEPTH = 2;
-// Chance decides *where* a fracture forks; the budget decides *how many* times.
-// Without the budget a long major fracture alone forks enough to saturate the
-// screen and the field never gets a quiet moment.
-const BRANCH_BUDGET = 3;
-const MAJOR_BRANCH_BUDGET = 7;
-const AMBIENT_CRACKS = 8; // ambient spawns pause above this
-const HARD_CAP = 28; // absolute ceiling, clicks included
+// Chance decides *where* a fissure splays; the budget decides *how many* times.
+// Without the budget a long trace splays enough to saturate the screen.
+const BRANCH_BUDGET = 2;
+const MAJOR_BRANCH_BUDGET = 5;
+
+const MIN_SPLAY_LENGTH = 130; // keeps splays from reading as stubs
+const AMBIENT_FISSURES = 9;
+const HARD_CAP = 26;
 
 const FIRST_SPAWN_MS = 700;
-const SPAWN_MIN_MS = 2200;
-const SPAWN_MAX_MS = 4200;
+const SPAWN_MIN_MS = 2400;
+const SPAWN_MAX_MS = 4600;
 const MAJOR_MIN_MS = 20000;
 const MAJOR_MAX_MS = 40000;
 
-const FADE_IN_MS = 420;
-const HOLD_MIN_MS = 2600;
-const HOLD_MAX_MS = 4200;
-const FADE_OUT_MS = 2400;
-const PULSE_MS = 950;
+const FADE_IN_MS = 520;
+const HOLD_MIN_MS = 2800;
+const HOLD_MAX_MS = 4600;
+const FADE_OUT_MS = 2600;
+const PULSE_MS = 1100;
 const FLASH_MS = 520;
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
+}
+
+function clamp(value: number, min: number, max: number) {
+  return value < min ? min : value > max ? max : value;
 }
 
 function hexToRgb(hex: string, fallback: [number, number, number]) {
@@ -112,8 +137,8 @@ function smoothNoise(x: number, y: number) {
 }
 
 /**
- * The field is a *line* field, not a vector field: it has an orientation but no
- * sign, so a fracture may travel either way along it.
+ * A *line* field: it carries an orientation but no sign, so a fissure may run
+ * either way along it.
  */
 function fieldAngle(x: number, y: number, seconds: number) {
   const n = smoothNoise(
@@ -130,37 +155,53 @@ function angleDelta(from: number, to: number) {
   return delta;
 }
 
-function createCrack(
+/** Pick whichever of the line's two directions the fissure is already facing. */
+function alignToLine(heading: number, orientation: number) {
+  const forward = angleDelta(heading, orientation);
+  const backward = angleDelta(heading, orientation + Math.PI);
+  return Math.abs(forward) <= Math.abs(backward)
+    ? heading + forward
+    : heading + backward;
+}
+
+function createFissure(
   origin: Point,
   angle: number,
   target: number,
   depth: number,
+  halfWidth: number,
   major = false,
-): Crack {
+  commit = 0,
+  grace = AMBIENT_GRACE,
+): Fissure {
   return {
     points: [origin],
     angle,
+    baseAngle: angle,
+    netTurn: 0,
     grown: 0,
     target,
     pending: 0,
     depth,
+    commit,
+    grace,
     phase: "growing",
     phaseElapsed: 0,
     holdFor: randomBetween(HOLD_MIN_MS, HOLD_MAX_MS) * (major ? 1.6 : 1),
-    speed: BASE_SPEED * (major ? 0.62 : 1),
-    scale: major ? 1.9 : 1,
+    speed: BASE_SPEED * (major ? 0.68 : 1),
+    halfWidth,
     major,
     branchBudget: major ? MAJOR_BRANCH_BUDGET : BRANCH_BUDGET,
     pulse: -1,
   };
 }
 
-function crackAlpha(crack: Crack) {
-  if (crack.phase === "growing") {
-    return Math.min(1, crack.phaseElapsed / FADE_IN_MS);
+function fissureAlpha(fissure: Fissure) {
+  if (fissure.phase === "growing") {
+    return Math.min(1, fissure.phaseElapsed / FADE_IN_MS);
   }
-  if (crack.phase === "fading") {
-    return Math.max(0, 1 - crack.phaseElapsed / FADE_OUT_MS);
+  if (fissure.phase === "fading") {
+    return Math.max(0, 1 - fissure.phaseElapsed / FADE_OUT_MS);
   }
   return 1;
 }
@@ -195,9 +236,58 @@ export function SiteBackground() {
     let rafId = 0;
     let lastTime = 0;
 
-    const cracks: Crack[] = [];
+    const fissures: Fissure[] = [];
     const flashes: Flash[] = [];
     const pointer: Point = { x: -9999, y: -9999 };
+
+    // Spatial hash of every live vertex, rebuilt each frame, used for the
+    // arrest test.
+    const grid = new Map<number, number[]>();
+    const cellKey = (x: number, y: number) =>
+      (Math.floor(x / CELL) + 8192) * 65536 + (Math.floor(y / CELL) + 8192);
+
+    function rebuildGrid() {
+      grid.clear();
+      for (let c = 0; c < fissures.length; c++) {
+        const points = fissures[c].points;
+        for (let i = 0; i < points.length; i++) {
+          const key = cellKey(points[i].x, points[i].y);
+          let bucket = grid.get(key);
+          if (!bucket) {
+            bucket = [];
+            grid.set(key, bucket);
+          }
+          // Packed as c * 2^16 + i to keep the buckets as flat number arrays.
+          bucket.push(c * 65536 + i);
+        }
+      }
+    }
+
+    function touchesExisting(tip: Point, ownIndex: number, ownCount: number) {
+      const cx = Math.floor(tip.x / CELL);
+      const cy = Math.floor(tip.y / CELL);
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          const bucket = grid.get(
+            (cx + ox + 8192) * 65536 + (cy + oy + 8192),
+          );
+          if (!bucket) continue;
+          for (const packed of bucket) {
+            const c = packed >>> 16;
+            const i = packed & 0xffff;
+            if (c === ownIndex && ownCount - i <= SELF_SKIP) continue;
+            const other = fissures[c]?.points[i];
+            if (!other) continue;
+            const dx = other.x - tip.x;
+            const dy = other.y - tip.y;
+            if (dx * dx + dy * dy < ARREST_DISTANCE * ARREST_DISTANCE) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -213,7 +303,6 @@ export function SiteBackground() {
     }
 
     function spawnAmbient() {
-      // Favour the margins so fractures tend to travel across empty space.
       const edgeBias = Math.random() < 0.6;
       const origin: Point = edgeBias
         ? {
@@ -225,131 +314,187 @@ export function SiteBackground() {
           }
         : { x: randomBetween(0, width), y: randomBetween(0, height) };
 
-      // Start already aligned to the field rather than fighting it.
-      const angle = fieldAngle(origin.x, origin.y, elapsedSeconds) + (Math.random() < 0.5 ? 0 : Math.PI);
-      cracks.push(createCrack(origin, angle, randomBetween(220, 620), 0));
+      const angle =
+        fieldAngle(origin.x, origin.y, elapsedSeconds) +
+        (Math.random() < 0.5 ? 0 : Math.PI);
+      fissures.push(
+        createFissure(
+          origin,
+          angle,
+          randomBetween(260, 680),
+          0,
+          randomBetween(1.6, 2.6),
+        ),
+      );
     }
 
     function spawnMajor() {
-      // Enters from an edge and travels far enough to cross the viewport.
-      const fromLeft = Math.random() < 0.5;
+      const fromStart = Math.random() < 0.5;
       const vertical = Math.random() < 0.4;
       const origin: Point = vertical
-        ? { x: randomBetween(0, width), y: fromLeft ? -20 : height + 20 }
-        : { x: fromLeft ? -20 : width + 20, y: randomBetween(0, height) };
+        ? { x: randomBetween(0, width), y: fromStart ? -20 : height + 20 }
+        : { x: fromStart ? -20 : width + 20, y: randomBetween(0, height) };
 
       const toCentre = Math.atan2(height / 2 - origin.y, width / 2 - origin.x);
-      const target = Math.hypot(width, height) * randomBetween(0.7, 1.05);
-      cracks.push(
-        createCrack(origin, toCentre + randomBetween(-0.5, 0.5), target, 0, true),
+      fissures.push(
+        createFissure(
+          origin,
+          toCentre + randomBetween(-0.35, 0.35),
+          Math.hypot(width, height) * randomBetween(0.75, 1.05),
+          0,
+          randomBetween(4.5, 6),
+          true,
+        ),
       );
     }
 
     function spawnBurst(x: number, y: number) {
-      const arms = 3 + Math.floor(Math.random() * 3);
+      // Radial splays, the way fractures run out of an indentation point.
+      const arms = 3 + Math.floor(Math.random() * 2);
       const base = Math.random() * Math.PI * 2;
       for (let i = 0; i < arms; i++) {
-        if (cracks.length >= HARD_CAP) break;
-        cracks.push(
-          createCrack(
+        if (fissures.length >= HARD_CAP) break;
+        fissures.push(
+          createFissure(
             { x, y },
-            base + (i / arms) * Math.PI * 2 + randomBetween(-0.3, 0.3),
-            randomBetween(150, 340),
+            base + (i / arms) * Math.PI * 2 + randomBetween(-0.25, 0.25),
+            randomBetween(170, 380),
             1,
+            randomBetween(1.4, 2.2),
+            false,
+            BRANCH_COMMIT,
+            BRANCH_GRACE,
           ),
         );
       }
       flashes.push({ x, y, elapsed: 0 });
     }
 
-    /** Blend the fracture's heading toward the local stress orientation. */
-    function steer(crack: Crack, tip: Point) {
-      const oriented = fieldAngle(tip.x, tip.y, elapsedSeconds);
-      const forward = angleDelta(crack.angle, oriented);
-      const backward = angleDelta(crack.angle, oriented + Math.PI);
-      let desired =
-        Math.abs(forward) <= Math.abs(backward)
-          ? crack.angle + forward
-          : crack.angle + backward;
-
-      const dx = pointer.x - tip.x;
-      const dy = pointer.y - tip.y;
-      const distance = Math.hypot(dx, dy);
-      if (distance < POINTER_RADIUS) {
-        // The pointer acts as a stress concentration the fracture leans into.
-        const weight = (1 - distance / POINTER_RADIUS) * POINTER_PULL;
-        desired += angleDelta(desired, Math.atan2(dy, dx)) * weight;
+    /**
+     * Bend the trace toward the local stress orientation, under a hard
+     * curvature budget. The pointer rotates the field near it toward the radial
+     * line — never toward the pointer's position, which is what would make a
+     * trace orbit it and coil.
+     */
+    function steer(fissure: Fissure, tip: Point) {
+      if (fissure.commit > 0) {
+        fissure.commit--;
+        fissure.angle += (Math.random() - 0.5) * JITTER;
+        return;
       }
 
-      crack.angle += angleDelta(crack.angle, desired) * FIELD_PULL;
-      crack.angle += (Math.random() - 0.5) * JITTER;
+      let orientation = fieldAngle(tip.x, tip.y, elapsedSeconds);
+
+      const dx = tip.x - pointer.x;
+      const dy = tip.y - pointer.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance < POINTER_RADIUS && distance > 1) {
+        const radial = Math.atan2(dy, dx);
+        const weight = (1 - distance / POINTER_RADIUS) * POINTER_PULL;
+        orientation += angleDelta(orientation, alignToLine(orientation, radial)) * weight;
+      }
+
+      const desired = alignToLine(fissure.angle, orientation);
+      let turn = angleDelta(fissure.angle, desired) * FIELD_PULL;
+      turn = clamp(turn, -MAX_TURN_PER_STEP, MAX_TURN_PER_STEP);
+
+      // Never let the accumulated bend exceed the budget — this is what makes
+      // coiling structurally impossible rather than merely unlikely.
+      const projected = fissure.netTurn + turn;
+      if (Math.abs(projected) > MAX_NET_TURN) {
+        turn = Math.sign(projected) * MAX_NET_TURN - fissure.netTurn;
+      }
+
+      fissure.netTurn += turn;
+      fissure.angle += turn + (Math.random() - 0.5) * JITTER;
     }
 
-    function advance(crack: Crack, deltaMs: number) {
-      crack.phaseElapsed += deltaMs;
+    function advance(fissure: Fissure, index: number, deltaMs: number) {
+      fissure.phaseElapsed += deltaMs;
 
-      if (crack.pulse >= 0) {
-        crack.pulse += deltaMs / PULSE_MS;
-        if (crack.pulse > 1) crack.pulse = -1;
+      if (fissure.pulse >= 0) {
+        fissure.pulse += deltaMs / PULSE_MS;
+        if (fissure.pulse > 1) fissure.pulse = -1;
       }
 
-      if (crack.phase === "holding") {
-        if (crack.phaseElapsed >= crack.holdFor) {
-          crack.phase = "fading";
-          crack.phaseElapsed = 0;
+      if (fissure.phase === "holding") {
+        if (fissure.phaseElapsed >= fissure.holdFor) {
+          fissure.phase = "fading";
+          fissure.phaseElapsed = 0;
         }
         return;
       }
 
-      if (crack.phase !== "growing") return;
+      if (fissure.phase !== "growing") return;
 
-      crack.pending += (crack.speed * deltaMs) / 1000;
+      fissure.pending += (fissure.speed * deltaMs) / 1000;
 
-      while (crack.pending >= STEP) {
-        crack.pending -= STEP;
+      while (fissure.pending >= STEP) {
+        fissure.pending -= STEP;
 
-        const last = crack.points[crack.points.length - 1];
-        steer(crack, last);
+        const last = fissure.points[fissure.points.length - 1];
+        steer(fissure, last);
 
-        crack.points.push({
-          x: last.x + Math.cos(crack.angle) * STEP,
-          y: last.y + Math.sin(crack.angle) * STEP,
-        });
-        crack.grown += STEP;
+        const next = {
+          x: last.x + Math.cos(fissure.angle) * STEP,
+          y: last.y + Math.sin(fissure.angle) * STEP,
+        };
+
+        // A fracture cannot cross a free surface: meeting another trace ends
+        // it. Splays that curve back into their parent terminate on it, which
+        // is how the strands come to anastomose.
+        if (fissure.grace > 0) {
+          fissure.grace--;
+        } else if (touchesExisting(next, index, fissure.points.length)) {
+          fissure.phase = "holding";
+          fissure.phaseElapsed = 0;
+          fissure.target = fissure.grown;
+          break;
+        }
+
+        fissure.points.push(next);
+        fissure.grown += STEP;
 
         const canBranch =
-          crack.depth < MAX_DEPTH &&
-          crack.branchBudget > 0 &&
-          cracks.length < HARD_CAP &&
-          Math.random() < BRANCH_CHANCE * (crack.major ? 2.2 : 1);
+          fissure.depth < MAX_DEPTH &&
+          fissure.branchBudget > 0 &&
+          fissures.length < HARD_CAP &&
+          Math.random() < BRANCH_CHANCE * (fissure.major ? 1.8 : 1);
 
         if (canBranch) {
-          crack.branchBudget--;
+          fissure.branchBudget--;
           const spread =
-            randomBetween(0.4, 0.95) * (Math.random() < 0.5 ? 1 : -1);
-          cracks.push(
-            createCrack(
-              { ...crack.points[crack.points.length - 1] },
-              crack.angle + spread,
-              crack.target * randomBetween(0.3, 0.55),
-              crack.depth + 1,
+            randomBetween(BRANCH_MIN_ANGLE, BRANCH_MAX_ANGLE) *
+            (Math.random() < 0.5 ? 1 : -1);
+          fissures.push(
+            createFissure(
+              { ...next },
+              fissure.angle + spread,
+              Math.max(
+                MIN_SPLAY_LENGTH,
+                fissure.target * randomBetween(0.35, 0.6),
+              ),
+              fissure.depth + 1,
+              fissure.halfWidth * randomBetween(0.5, 0.7),
+              false,
+              BRANCH_COMMIT,
+              BRANCH_GRACE,
             ),
           );
         }
 
-        if (crack.grown >= crack.target) {
-          crack.phase = "holding";
-          crack.phaseElapsed = 0;
-          // A major fracture releases its energy as a pulse of light.
-          if (crack.major) crack.pulse = 0;
+        if (fissure.grown >= fissure.target) {
+          fissure.phase = "holding";
+          fissure.phaseElapsed = 0;
+          if (fissure.major) fissure.pulse = 0;
           break;
         }
       }
     }
 
-    function heatFor(crack: Crack) {
+    function heatFor(fissure: Fissure) {
       let nearest = Infinity;
-      for (const point of crack.points) {
+      for (const point of fissure.points) {
         const dx = point.x - pointer.x;
         const dy = point.y - pointer.y;
         const distance = dx * dx + dy * dy;
@@ -357,6 +502,58 @@ export function SiteBackground() {
       }
       const falloff = 1 - Math.min(1, Math.sqrt(nearest) / HEAT_RADIUS);
       return 1 + HEAT_BOOST * falloff;
+    }
+
+    /**
+     * Outline of the opening: the centreline offset either side by a width that
+     * peaks mid-span and tapers to nothing at both tips, which is the profile
+     * that separates a fault trace from a bolt.
+     */
+    function outline(fissure: Fissure, widthScale: number) {
+      const points = fissure.points;
+      const path = new Path2D();
+      const left: Point[] = [];
+      const right: Point[] = [];
+      const last = points.length - 1;
+
+      for (let i = 0; i <= last; i++) {
+        const prev = points[Math.max(0, i - 1)];
+        const next = points[Math.min(last, i + 1)];
+        let nx = -(next.y - prev.y);
+        let ny = next.x - prev.x;
+        const length = Math.hypot(nx, ny) || 1;
+        nx /= length;
+        ny /= length;
+
+        const along = clamp((i * STEP) / Math.max(fissure.target, 1), 0, 1);
+        const taperTip = Math.min(1, (last - i) / 6); // sharp leading tip
+        const w =
+          fissure.halfWidth *
+          widthScale *
+          Math.sin(Math.PI * along) *
+          taperTip;
+
+        left.push({ x: points[i].x + nx * w, y: points[i].y + ny * w });
+        right.push({ x: points[i].x - nx * w, y: points[i].y - ny * w });
+      }
+
+      path.moveTo(left[0].x, left[0].y);
+      for (let i = 1; i < left.length; i++) path.lineTo(left[i].x, left[i].y);
+      for (let i = right.length - 1; i >= 0; i--) {
+        path.lineTo(right[i].x, right[i].y);
+      }
+      path.closePath();
+      return path;
+    }
+
+    function centreline(fissure: Fissure) {
+      const points = fissure.points;
+      const path = new Path2D();
+      path.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        path.lineTo(points[i].x, points[i].y);
+      }
+      return path;
     }
 
     function glowAt(x: number, y: number, radius: number, alpha: number) {
@@ -369,64 +566,55 @@ export function SiteBackground() {
       ctx.fill();
     }
 
-    function draw(crack: Crack) {
-      const points = crack.points;
-      if (points.length < 2) return;
+    function draw(fissure: Fissure) {
+      const points = fissure.points;
+      if (points.length < 3) return;
 
-      const alpha = crackAlpha(crack) * heatFor(crack);
+      const alpha = Math.min(1.4, fissureAlpha(fissure) * heatFor(fissure));
       if (alpha <= 0) return;
-      const scale = crack.scale;
 
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
+      const spine = centreline(fissure);
 
-      // Bloom, body, then the bright fracture line itself.
-      ctx.lineWidth = 14 * scale;
-      ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.06 * alpha})`;
-      ctx.stroke();
+      // Faint warmth escaping the opening — kept low so it reads as depth
+      // rather than discharge.
+      ctx.lineWidth = 16 * (fissure.major ? 1.6 : 1);
+      ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.035 * alpha})`;
+      ctx.stroke(spine);
 
-      ctx.lineWidth = 5 * scale;
-      ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.14 * alpha})`;
-      ctx.stroke();
+      // The opening itself: darker than the ground around it.
+      const gap = outline(fissure, 1);
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.95 * alpha})`;
+      ctx.fill(gap);
 
-      ctx.lineWidth = 1.3 * scale;
-      ctx.strokeStyle = `rgba(${br}, ${bg}, ${bb}, ${0.5 * alpha})`;
-      ctx.stroke();
+      // Lit rim along the broken edge.
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(168, 140, 112, ${0.22 * alpha})`;
+      ctx.stroke(gap);
 
-      // While it is still tearing, the leading tip glows hotter.
-      if (crack.phase === "growing") {
+      // Ember deep inside, tapering with the opening.
+      ctx.fillStyle = `rgba(${br}, ${bg}, ${bb}, ${0.42 * alpha})`;
+      ctx.fill(outline(fissure, 0.4));
+
+      if (fissure.phase === "growing") {
         const tip = points[points.length - 1];
-        glowAt(tip.x, tip.y, 18 * scale, 0.5 * alpha);
+        glowAt(tip.x, tip.y, 12 * (fissure.major ? 1.6 : 1), 0.32 * alpha);
       }
 
-      // Energy release travelling the length of a completed major fracture.
-      if (crack.pulse >= 0) {
+      if (fissure.pulse >= 0) {
         const index = Math.min(
           points.length - 1,
-          Math.floor(crack.pulse * (points.length - 1)),
+          Math.floor(fissure.pulse * (points.length - 1)),
         );
         const head = points[index];
-        const fade = 1 - crack.pulse;
-        glowAt(head.x, head.y, 46 * scale, 0.55 * fade);
-
-        ctx.beginPath();
-        ctx.moveTo(points[Math.max(0, index - 8)].x, points[Math.max(0, index - 8)].y);
-        for (let i = Math.max(0, index - 8); i <= index; i++) {
-          ctx.lineTo(points[i].x, points[i].y);
-        }
-        ctx.lineWidth = 2.4 * scale;
-        ctx.strokeStyle = `rgba(255, 236, 200, ${0.7 * fade})`;
-        ctx.stroke();
+        const fade = 1 - fissure.pulse;
+        glowAt(head.x, head.y, 52, 0.4 * fade);
       }
     }
 
     function drawFlash(flash: Flash) {
       const progress = flash.elapsed / FLASH_MS;
       const fade = 1 - progress;
-      glowAt(flash.x, flash.y, 30 + progress * 120, 0.5 * fade * fade);
+      glowAt(flash.x, flash.y, 26 + progress * 90, 0.32 * fade * fade);
     }
 
     function frame(time: number) {
@@ -437,29 +625,29 @@ export function SiteBackground() {
       elapsedSeconds += deltaMs / 1000;
 
       nextSpawnIn -= deltaMs;
-      if (nextSpawnIn <= 0 && cracks.length < AMBIENT_CRACKS) {
+      if (nextSpawnIn <= 0 && fissures.length < AMBIENT_FISSURES) {
         spawnAmbient();
         nextSpawnIn = randomBetween(SPAWN_MIN_MS, SPAWN_MAX_MS);
       }
 
       nextMajorIn -= deltaMs;
-      if (nextMajorIn <= 0 && cracks.length < HARD_CAP) {
+      if (nextMajorIn <= 0 && fissures.length < HARD_CAP) {
         spawnMajor();
         nextMajorIn = randomBetween(MAJOR_MIN_MS, MAJOR_MAX_MS);
       }
 
-      ctx.globalCompositeOperation = "source-over";
       ctx.clearRect(0, 0, width, height);
-      // Overlapping fractures should compound into brighter light, not paint
-      // over each other.
-      ctx.globalCompositeOperation = "lighter";
+      rebuildGrid();
 
-      for (let i = cracks.length - 1; i >= 0; i--) {
-        const crack = cracks[i];
-        advance(crack, deltaMs);
-        draw(crack);
-        if (crack.phase === "fading" && crack.phaseElapsed >= FADE_OUT_MS) {
-          cracks.splice(i, 1);
+      for (let i = 0; i < fissures.length; i++) {
+        advance(fissures[i], i, deltaMs);
+        draw(fissures[i]);
+      }
+
+      for (let i = fissures.length - 1; i >= 0; i--) {
+        const fissure = fissures[i];
+        if (fissure.phase === "fading" && fissure.phaseElapsed >= FADE_OUT_MS) {
+          fissures.splice(i, 1);
         }
       }
 
