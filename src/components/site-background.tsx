@@ -538,36 +538,69 @@ export function SiteBackground() {
       ctx.fill();
     }
 
+    // Width by generation: the main line reads as the thicker trace, each
+    // fork starting noticeably thinner than its parent.
+    const DEPTH_SCALE = [1, 0.72, 0.52];
+
+    function strokeLayers(x1: number, y1: number, x2: number, y2: number, w: number, alpha: number) {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineWidth = 7 * w;
+      ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.05 * alpha})`;
+      ctx.stroke();
+      ctx.lineWidth = 1.6 * w;
+      ctx.strokeStyle = `rgba(20, 14, 10, ${0.85 * alpha})`;
+      ctx.stroke();
+      ctx.lineWidth = 0.8 * w;
+      ctx.strokeStyle = `rgba(${br}, ${bg}, ${bb}, ${0.55 * alpha})`;
+      ctx.stroke();
+    }
+
     function draw(fissure: Fissure) {
       const points = fissure.points;
       if (points.length < 2) return;
 
       const alpha = Math.min(1.2, fissureAlpha(fissure) * heatFor(fissure));
       if (alpha <= 0) return;
-      const scale = fissure.major ? 1.5 : 1;
 
-      const spine = centreline(fissure);
+      const isRoot = fissure.depth === 0;
+      const depthScale = DEPTH_SCALE[Math.min(fissure.depth, DEPTH_SCALE.length - 1)];
+      const baseScale = (fissure.major ? 1.6 : 1) * depthScale;
 
-      // Faint warmth around the hairline — kept low so it reads as a lit
-      // edge rather than a discharge.
-      ctx.lineWidth = 7 * scale;
-      ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.05 * alpha})`;
-      ctx.stroke(spine);
-
-      // The hairline itself: dark, roughly constant width, like a real
-      // surface crack rather than a lit bolt.
-      ctx.lineWidth = 1.6 * scale;
-      ctx.strokeStyle = `rgba(20, 14, 10, ${0.85 * alpha})`;
-      ctx.stroke(spine);
-
-      // A thin ember running the core of the crack.
-      ctx.lineWidth = 0.8 * scale;
-      ctx.strokeStyle = `rgba(${br}, ${bg}, ${bb}, ${0.55 * alpha})`;
-      ctx.stroke(spine);
+      if (isRoot) {
+        // The main line: a solid width along its whole run.
+        const spine = centreline(fissure);
+        ctx.lineWidth = 7 * baseScale;
+        ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${0.05 * alpha})`;
+        ctx.stroke(spine);
+        ctx.lineWidth = 1.6 * baseScale;
+        ctx.strokeStyle = `rgba(20, 14, 10, ${0.85 * alpha})`;
+        ctx.stroke(spine);
+        ctx.lineWidth = 0.8 * baseScale;
+        ctx.strokeStyle = `rgba(${br}, ${bg}, ${bb}, ${0.55 * alpha})`;
+        ctx.stroke(spine);
+      } else {
+        // A branch: full width where it splits off the parent, thinning
+        // toward its tip — it visibly loses thickness as it moves away
+        // from where it started.
+        const last = points.length - 1;
+        for (let i = 1; i <= last; i++) {
+          const w = baseScale * (1 - (i / last) * 0.7);
+          strokeLayers(
+            points[i - 1].x,
+            points[i - 1].y,
+            points[i].x,
+            points[i].y,
+            w,
+            alpha,
+          );
+        }
+      }
 
       if (fissure.phase === "growing") {
         const tip = points[points.length - 1];
-        glowAt(tip.x, tip.y, 10 * scale, 0.45 * alpha);
+        glowAt(tip.x, tip.y, 10 * baseScale, 0.45 * alpha);
       }
 
       if (fissure.pulse >= 0) {
