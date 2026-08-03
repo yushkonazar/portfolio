@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ContactForm } from "@/components/contact-form";
+import { Hero } from "@/components/hero";
 import { Link } from "@/i18n/navigation";
 import { projects } from "@/lib/projects";
 
@@ -12,14 +13,9 @@ export default function Home() {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">
-        <div className="px-6 py-24 text-center">
-          <h1 className="text-4xl font-semibold tracking-tight">
-            {t("name")}
-          </h1>
-          <p className="text-muted-foreground mt-3 text-lg">{t("role")}</p>
-        </div>
+        <Hero name={t("name")} role={t("role")} />
 
-        <section className="mx-auto max-w-3xl px-6 pb-24">
+        <section className="mx-auto max-w-3xl px-6 py-24">
           <h2 className="text-sm font-medium tracking-wide uppercase">
             {t("featuredProjects")}
           </h2>
