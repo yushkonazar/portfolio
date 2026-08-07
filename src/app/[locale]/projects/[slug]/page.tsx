@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -80,6 +81,16 @@ export default async function ProjectPage({
         <p className="text-muted-foreground mt-4 text-lg">
           {project.tagline[currentLocale]}
         </p>
+
+        {project.screenshot && (
+          <Image
+            src={project.screenshot.src}
+            alt={project.title}
+            width={project.screenshot.width}
+            height={project.screenshot.height}
+            className="border-border/60 mt-8 w-full rounded-xl border"
+          />
+        )}
 
         <h2 className="mt-10 text-sm font-medium tracking-wide uppercase">
           {t("stack")}

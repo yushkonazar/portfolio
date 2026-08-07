@@ -14,6 +14,7 @@ export type Project = {
   highlights: LocalizedList;
   result: LocalizedText;
   note?: LocalizedText;
+  screenshot?: { src: string; width: number; height: number };
   links?: {
     repo?: string;
     demo?: string;
@@ -58,6 +59,11 @@ export const projects: Project[] = [
     result: {
       en: "Deployed on Render and running as a public demo. Roadmap items I've deliberately left for later — TV shows, genre pages, watchlists — are tracked openly in the repo rather than left unspoken.",
       uk: "Задеплоєно на Render, працює як публічне демо. Пункти на майбутнє — TV-шоу, сторінки жанрів, списки перегляду — відкрито зазначені в roadmap репозиторію.",
+    },
+    screenshot: {
+      src: "/moviehouse-screenshot.jpg",
+      width: 1600,
+      height: 731,
     },
     links: {
       repo: "https://github.com/yushkonazar/moviehouse",
@@ -108,6 +114,11 @@ export const projects: Project[] = [
     result: {
       en: "Deployed on Render as a working MVP. One deliberate trade-off I'm upfront about: posts persist to a JSON file, not a database, so content resets on redeploy — a real limitation of the file-system approach, not a bug. Migrating to PostgreSQL via Prisma is the next planned step, already scoped in the repo's roadmap.",
       uk: "Задеплоєно на Render як робочий MVP. Один свідомий компроміс, який не приховую: пости зберігаються у JSON-файлі, а не в базі даних, тож контент скидається після редеплою — це реальне обмеження файлового підходу, а не баг. Міграція на PostgreSQL через Prisma — наступний запланований крок, вже занотований у roadmap репозиторію.",
+    },
+    screenshot: {
+      src: "/modern-blog-screenshot.jpg",
+      width: 1600,
+      height: 728,
     },
     links: {
       repo: "https://github.com/yushkonazar/modern-blog",

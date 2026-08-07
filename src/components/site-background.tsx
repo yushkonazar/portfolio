@@ -8,8 +8,8 @@ import { useEffect, useRef } from "react";
  * nothing loops forever.
  *
  * Started from a real reference (a stock "surface impact crack" clip,
- * examined frame by frame — see .workspace/journal.md), then tuned away from
- * it on direct feedback: slower growth, gentler turns, and branching spread
+ * examined frame by frame), then tuned away from it on direct feedback:
+ * slower growth, gentler turns, and branching spread
  * evenly along the whole trace rather than concentrated near the burst
  * point. It's still thin and roughly constant-width rather than a tapered
  * opening, and jagged — short straight-ish runs meeting at sharp angles, not
