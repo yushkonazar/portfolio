@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 
   /* Near-black base, matched against the avatar photo (exact shade to be
      fine-tuned once the final crop lands — see .workspace/journal.md).
