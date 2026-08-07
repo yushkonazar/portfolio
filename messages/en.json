@@ -1,4 +1,9 @@
 {
+  "Metadata": {
+    "title": "Yushko Nazar — Fullstack Developer",
+    "description": "Fullstack developer portfolio: Next.js, Node.js/Express, and Cloudflare Workers projects — including Svitanok, a personal Telegram assistant in daily production use. Open to remote, hybrid, and freelance work.",
+    "keywords": "Yushko Nazar, Nazar Yushko developer, Nazar Yushko portfolio, Fullstack developer Ukraine, Next.js developer Lviv, JavaScript developer portfolio, Node.js Express developer"
+  },
   "HomePage": {
     "name": "Yushko Nazar",
     "role": "Fullstack Developer",
@@ -6,6 +11,10 @@
   },
   "ProjectPage": {
     "stack": "Stack",
+    "problem": "The problem",
+    "approach": "Approach",
+    "highlights": "Key decisions",
+    "result": "Result",
     "liveDemo": "Live demo",
     "sourceCode": "Source code"
   },
@@ -18,5 +27,29 @@
     "submitting": "Sending…",
     "success": "Thanks — your message is on its way.",
     "error": "Something went wrong. Please try again or email hello@yushko.dev directly."
+  },
+  "ResumePage": {
+    "title": "Resume",
+    "downloadPdf": "Download PDF",
+    "summary": "Summary",
+    "skills": "Skills",
+    "projects": "Projects",
+    "education": "Education",
+    "courses": "Courses",
+    "languages": "Languages"
+  },
+  "PrivacyPage": {
+    "title": "Privacy",
+    "intro": "This page explains, in plain language, what happens to your data when you use this site.",
+    "collectionHeading": "What the contact form collects",
+    "collectionBody": "If you use the contact form, it sends your name, email address, and message to me by email. That's the only data this site actively collects.",
+    "usageHeading": "How it's used",
+    "usageBody": "Cloudflare Turnstile checks that the form submission isn't automated spam, and Resend delivers the email to my inbox at hello@yushko.dev. Neither service is used for anything beyond that. The message isn't stored in a database — it just lands in my inbox like any other email, and I reply the same way.",
+    "analyticsHeading": "Analytics",
+    "analyticsBody": "This site may use Cloudflare Web Analytics, a cookieless, privacy-friendly analytics service — it reports aggregate page views without tracking individual visitors or setting any tracking cookies.",
+    "retentionHeading": "Retention",
+    "retentionBody": "There's no separate database, so there's nothing to delete beyond the email itself, which I manage like any other message in my inbox.",
+    "contactHeading": "Questions",
+    "contactBody": "For anything about your data, email hello@yushko.dev."
   }
 }
