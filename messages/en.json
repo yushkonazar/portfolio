@@ -17,7 +17,8 @@
     "result": "Result",
     "liveDemo": "Live demo",
     "sourceCode": "Source code",
-    "coldStart": "Hosted on a free tier — the first request takes ~30s to wake the server."
+    "coldStart": "Hosted on a free tier — the first request takes ~30s to wake the server.",
+    "backToProjects": "All projects"
   },
   "ContactForm": {
     "heading": "Get in touch",

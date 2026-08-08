@@ -5,6 +5,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { Link } from "@/i18n/navigation";
 import { projects, getProject } from "@/lib/projects";
 import type { Locale } from "@/i18n/routing";
 
@@ -72,6 +73,13 @@ export default async function ProjectPage({
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-16">
+        <Link
+          href="/#projects"
+          className="text-muted-foreground hover:text-foreground mb-8 inline-block text-sm transition-colors"
+        >
+          ← {t("backToProjects")}
+        </Link>
+
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-semibold">{project.title}</h1>
           <span className="text-accent-bright border-accent/40 rounded-full border px-2.5 py-0.5 text-xs font-medium">

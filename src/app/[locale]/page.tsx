@@ -53,7 +53,7 @@ export default async function Home({
       <main className="flex-1">
         <Hero name={t("name")} role={t("role")} />
 
-        <section className="mx-auto max-w-3xl px-6 py-24">
+        <section id="projects" className="mx-auto max-w-3xl px-6 py-24">
           <h2 className="text-sm font-medium tracking-wide uppercase">
             {t("featuredProjects")}
           </h2>
