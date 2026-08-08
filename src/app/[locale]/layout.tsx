@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
 import Script from "next/script";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { SiteBackground } from "@/components/site-background";
-import "./globals.css";
-
-const manrope = Manrope({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-manrope",
-  display: "swap",
-});
+import { manrope } from "../fonts";
+import "../globals.css";
 
 const SITE_URL = "https://yushko.dev";
 

@@ -20,6 +20,11 @@
     "coldStart": "Hosted on a free tier — the first request takes ~30s to wake the server.",
     "backToProjects": "All projects"
   },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "That page doesn't exist — it may have moved, or the link may be wrong.",
+    "backHome": "Go to the homepage"
+  },
   "ContactForm": {
     "heading": "Get in touch",
     "name": "Name",
