@@ -14,7 +14,10 @@
   --color-muted: #171717;
   --color-muted-foreground: #a1a1aa;
 
-  --color-border: #27272a;
+  /* 3.23:1 against the background — WCAG 1.4.11 wants 3:1 for the borders
+     that identify inputs, cards and pills. #27272a looked right but sat at
+     1.37:1, which meant the edges were effectively invisible. */
+  --color-border: #5f5f68;
 
   /* Ember/amber accent — ties the palette to the hero crack-shader glow */
   --color-accent: #d97706;

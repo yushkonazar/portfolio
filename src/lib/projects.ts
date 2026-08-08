@@ -18,6 +18,9 @@ export type Project = {
   links?: {
     repo?: string;
     demo?: string;
+    // Free-tier hosting sleeps when idle; measured ~33s to wake. Worth warning
+    // about rather than letting a reviewer stare at a blank tab.
+    demoColdStart?: boolean;
   };
 };
 
@@ -68,6 +71,7 @@ export const projects: Project[] = [
     links: {
       repo: "https://github.com/yushkonazar/moviehouse",
       demo: "https://moviehouse-mou1.onrender.com",
+      demoColdStart: true,
     },
   },
   {
@@ -123,6 +127,7 @@ export const projects: Project[] = [
     links: {
       repo: "https://github.com/yushkonazar/modern-blog",
       demo: "https://modern-blog-5k8a.onrender.com",
+      demoColdStart: true,
     },
   },
   {

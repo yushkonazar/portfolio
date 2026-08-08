@@ -153,26 +153,33 @@ export default async function ProjectPage({
         </div>
 
         {project.links && (
-          <div className="mt-10 flex gap-4 text-sm">
-            {project.links.demo && (
-              <a
-                href={project.links.demo}
-                target="_blank"
-                rel="noreferrer"
-                className="text-accent-bright cursor-pointer hover:underline"
-              >
-                {t("liveDemo")}
-              </a>
-            )}
-            {project.links.repo && (
-              <a
-                href={project.links.repo}
-                target="_blank"
-                rel="noreferrer"
-                className="text-accent-bright cursor-pointer hover:underline"
-              >
-                {t("sourceCode")}
-              </a>
+          <div className="mt-10">
+            <div className="flex gap-4 text-sm">
+              {project.links.demo && (
+                <a
+                  href={project.links.demo}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-accent-bright cursor-pointer hover:underline"
+                >
+                  {t("liveDemo")}
+                </a>
+              )}
+              {project.links.repo && (
+                <a
+                  href={project.links.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-accent-bright cursor-pointer hover:underline"
+                >
+                  {t("sourceCode")}
+                </a>
+              )}
+            </div>
+            {project.links.demoColdStart && (
+              <p className="text-muted-foreground mt-2 text-sm">
+                {t("coldStart")}
+              </p>
             )}
           </div>
         )}

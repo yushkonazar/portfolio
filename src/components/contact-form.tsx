@@ -65,7 +65,7 @@ export function ContactForm() {
             type="text"
             required
             maxLength={200}
-            className="border-border focus:border-accent rounded-md border bg-transparent px-3 py-2 outline-none"
+            className="border-border focus:border-accent focus-visible:outline-accent-bright rounded-md border bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
           />
         </div>
 
@@ -79,7 +79,7 @@ export function ContactForm() {
             type="email"
             required
             maxLength={200}
-            className="border-border focus:border-accent rounded-md border bg-transparent px-3 py-2 outline-none"
+            className="border-border focus:border-accent focus-visible:outline-accent-bright rounded-md border bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
           />
         </div>
 
@@ -93,7 +93,7 @@ export function ContactForm() {
             required
             maxLength={5000}
             rows={5}
-            className="border-border focus:border-accent rounded-md border bg-transparent px-3 py-2 outline-none"
+            className="border-border focus:border-accent focus-visible:outline-accent-bright rounded-md border bg-transparent px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
           />
         </div>
 
@@ -113,12 +113,18 @@ export function ContactForm() {
           {status === "submitting" ? t("submitting") : t("submit")}
         </button>
 
-        {status === "success" && (
-          <p className="text-sm text-emerald-500">{t("success")}</p>
-        )}
-        {status === "error" && (
-          <p className="text-destructive text-sm">{t("error")}</p>
-        )}
+        <div aria-live="polite" className="empty:hidden">
+          {status === "success" && (
+            <p role="status" className="text-sm text-emerald-500">
+              {t("success")}
+            </p>
+          )}
+          {status === "error" && (
+            <p role="alert" className="text-destructive text-sm">
+              {t("error")}
+            </p>
+          )}
+        </div>
       </form>
     </section>
   );

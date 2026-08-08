@@ -64,7 +64,7 @@ export default async function Home({
                   href={`/projects/${project.slug}`}
                   className="border-border hover:border-accent block cursor-pointer rounded-lg border px-4 py-3 transition-colors"
                 >
-                  <span className="font-medium">{project.title}</span>
+                  <h3 className="font-medium">{project.title}</h3>
                   <span className="text-muted-foreground block text-sm">
                     {project.tagline[currentLocale]}
                   </span>

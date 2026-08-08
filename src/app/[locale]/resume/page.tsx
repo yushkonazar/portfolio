@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Link } from "@/i18n/navigation";
 import { projects } from "@/lib/projects";
+import { contactLinks } from "@/lib/contacts";
 import {
   summary,
   skillGroups,
@@ -65,28 +66,18 @@ export default async function ResumePage({
             <h1 className="text-3xl font-semibold">{home("name")}</h1>
             <p className="text-muted-foreground mt-1">{home("role")}</p>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <a
-                href="mailto:hello@yushko.dev"
-                className="text-accent-bright hover:underline"
-              >
-                hello@yushko.dev
-              </a>
-              <a
-                href="https://github.com/yushkonazar"
-                target="_blank"
-                rel="noreferrer"
-                className="text-accent-bright hover:underline"
-              >
-                GitHub
-              </a>
-              <a
-                href="https://linkedin.com/in/nazar-yushko"
-                target="_blank"
-                rel="noreferrer"
-                className="text-accent-bright hover:underline"
-              >
-                LinkedIn
-              </a>
+              {contactLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  {...("external" in link && link.external
+                    ? { target: "_blank", rel: "noreferrer" }
+                    : {})}
+                  className="text-accent-bright hover:underline"
+                >
+                  {link.text}
+                </a>
+              ))}
             </div>
           </div>
           <a
@@ -147,7 +138,7 @@ export default async function ResumePage({
                   href={`/projects/${project.slug}`}
                   className="border-border hover:border-accent block cursor-pointer rounded-lg border px-4 py-3 transition-colors"
                 >
-                  <span className="font-medium">{project.title}</span>
+                  <h3 className="font-medium">{project.title}</h3>
                   <span className="text-muted-foreground block text-sm">
                     {project.tagline[currentLocale]}
                   </span>

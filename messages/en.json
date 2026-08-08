@@ -16,7 +16,8 @@
     "highlights": "Key decisions",
     "result": "Result",
     "liveDemo": "Live demo",
-    "sourceCode": "Source code"
+    "sourceCode": "Source code",
+    "coldStart": "Hosted on a free tier — the first request takes ~30s to wake the server."
   },
   "ContactForm": {
     "heading": "Get in touch",
