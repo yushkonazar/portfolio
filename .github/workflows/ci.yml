@@ -12,9 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # npm 11 to match the lockfile: npm 10 resolves next-intl's optional
+      # @swc/helpers peer differently and rejects the lockfile as out of sync.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - run: npm ci
