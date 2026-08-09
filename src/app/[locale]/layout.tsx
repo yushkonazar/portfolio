@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
-import { SiteBackground } from "@/components/site-background";
 import { manrope } from "../fonts";
 import "../globals.css";
 
@@ -72,7 +71,6 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={manrope.variable}>
       <body>
-        <SiteBackground />
         <NextIntlClientProvider>
           <div className="relative z-10">{children}</div>
         </NextIntlClientProvider>

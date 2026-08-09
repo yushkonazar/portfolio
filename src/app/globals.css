@@ -16,7 +16,9 @@
 
   /* 3.23:1 against the background — WCAG 1.4.11 wants 3:1 for the borders
      that identify inputs, cards and pills. #27272a looked right but sat at
-     1.37:1, which meant the edges were effectively invisible. */
+     1.37:1, which meant the edges were effectively invisible.
+     NOTE: border token only. Text below 18px needs 4.5:1 — use
+     --color-muted-foreground (7:1) for dim copy, never this. */
   --color-border: #5f5f68;
 
   /* Ember/amber accent — ties the palette to the hero crack-shader glow */
@@ -33,5 +35,63 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+  }
+}
+
+@keyframes ember-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -340px 0;
+  }
+  100% {
+    background-position: 340px 0;
+  }
+}
+
+@layer components {
+  /* The availability dot next to "Available for work". */
+  .ember-pulse {
+    animation: ember-pulse 2.6s ease-in-out infinite;
+  }
+
+  /* Holds the exact aspect ratio while a screenshot loads, so nothing shifts. */
+  .skeleton {
+    background: linear-gradient(90deg, #0d0d0d 0, #171717 50%, #0d0d0d 100%);
+    background-size: 340px 100%;
+    animation: skeleton-shimmer 1.5s linear infinite;
+  }
+
+  /* Stand-in for a screenshot that doesn't exist yet. */
+  .placeholder-hatch {
+    background-color: #0d0d0d;
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(250, 250, 250, 0.05) 0 8px,
+      transparent 8px 16px
+    );
+  }
+
+  /* Keeps the fracture animation off the headline. */
+  .hero-crack-mask {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 56%);
+    mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 56%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ember-pulse,
+  .skeleton {
+    animation: none;
   }
 }

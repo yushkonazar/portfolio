@@ -3,9 +3,13 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Site-wide backdrop: hairline fractures that burst from a point on a black
- * field, propagate outward, hold, then close. Each fissure is finite —
- * nothing loops forever.
+ * Fracture backdrop: hairline cracks that burst from a point, propagate
+ * outward, hold, then close. Each fissure is finite — nothing loops forever.
+ *
+ * Two modes. Default: fills the viewport, fixed behind the whole page.
+ * `scoped`: fills the nearest positioned ancestor instead — used to confine
+ * the same animation to the hero band on the home page, so it can share the
+ * fold with real content instead of running full-bleed behind it.
  *
  * Started from a real reference (a stock "surface impact crack" clip,
  * examined frame by frame), then tuned away from it on direct feedback:
@@ -218,7 +222,24 @@ function fissureAlpha(fissure: Fissure) {
   return 1;
 }
 
-export function SiteBackground() {
+type SiteBackgroundProps = {
+  /** Fill the nearest positioned ancestor instead of the viewport. */
+  scoped?: boolean;
+  /** Bias ambient bursts (and major-fissure origins) to the right half —
+   * keeps them off text that sits on the left, e.g. a hero headline. */
+  region?: "right";
+  /** Concurrent burst clusters. Default 3; a hero-scoped instance uses fewer. */
+  bursts?: number;
+  /** Total live arms across every cluster. Default 34. */
+  cap?: number;
+};
+
+export function SiteBackground({
+  scoped = false,
+  region,
+  bursts = AMBIENT_BURSTS,
+  cap = HARD_CAP,
+}: SiteBackgroundProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -248,6 +269,7 @@ export function SiteBackground() {
     let rafId = 0;
     let lastTime = 0;
     let liveArms = 0;
+    let visible = true;
 
     const fissures: Fissure[] = [];
     const flashes: Flash[] = [];
@@ -304,8 +326,11 @@ export function SiteBackground() {
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = window.innerWidth;
-      height = window.innerHeight;
+      const rect = scoped
+        ? canvas.parentElement!.getBoundingClientRect()
+        : { width: window.innerWidth, height: window.innerHeight };
+      width = Math.max(1, rect.width);
+      height = Math.max(1, rect.height);
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
@@ -323,7 +348,7 @@ export function SiteBackground() {
       major = false,
       grace = 0,
     ) {
-      if (liveArms >= HARD_CAP) return;
+      if (liveArms >= cap) return;
       fissures.push(createFissure(origin, angle, target, depth, major, grace));
       liveArms++;
     }
@@ -348,6 +373,15 @@ export function SiteBackground() {
     }
 
     function spawnAmbient() {
+      if (region === "right") {
+        spawnBurstAt(
+          randomBetween(width * 0.5, width * 0.98),
+          randomBetween(0, height),
+          130,
+          340,
+        );
+        return;
+      }
       const edgeBias = Math.random() < 0.6;
       const origin: Point = edgeBias
         ? {
@@ -365,7 +399,13 @@ export function SiteBackground() {
       const fromStart = Math.random() < 0.5;
       const vertical = Math.random() < 0.4;
       const origin: Point = vertical
-        ? { x: randomBetween(0, width), y: fromStart ? -20 : height + 20 }
+        ? {
+            x:
+              region === "right"
+                ? randomBetween(width * 0.5, width)
+                : randomBetween(0, width),
+            y: fromStart ? -20 : height + 20,
+          }
         : { x: fromStart ? -20 : width + 20, y: randomBetween(0, height) };
 
       const toCentre = Math.atan2(height / 2 - origin.y, width / 2 - origin.x);
@@ -476,7 +516,7 @@ export function SiteBackground() {
         const canBranch =
           fissure.depth < MAX_DEPTH &&
           fissure.branchBudget > 0 &&
-          liveArms < HARD_CAP &&
+          liveArms < cap &&
           Math.random() < BRANCH_CHANCE;
 
         if (canBranch) {
@@ -634,13 +674,13 @@ export function SiteBackground() {
 
       nextSpawnIn -= deltaMs;
       const activeBursts = Math.ceil(liveArms / ((ARM_MIN + ARM_MAX) / 2));
-      if (nextSpawnIn <= 0 && activeBursts < AMBIENT_BURSTS) {
+      if (nextSpawnIn <= 0 && activeBursts < bursts) {
         spawnAmbient();
         nextSpawnIn = randomBetween(SPAWN_MIN_MS, SPAWN_MAX_MS);
       }
 
       nextMajorIn -= deltaMs;
-      if (nextMajorIn <= 0 && liveArms < HARD_CAP) {
+      if (nextMajorIn <= 0 && liveArms < cap) {
         spawnMajor();
         nextMajorIn = randomBetween(MAJOR_MIN_MS, MAJOR_MAX_MS);
       }
@@ -669,48 +709,103 @@ export function SiteBackground() {
       }
     }
 
+    function startLoop() {
+      if (rafId || !visible || document.hidden) return;
+      lastTime = 0;
+      rafId = requestAnimationFrame(frame);
+    }
+
+    function stopLoop() {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+
     function onPointerMove(event: PointerEvent) {
-      pointer.x = event.clientX;
-      pointer.y = event.clientY;
+      if (scoped) {
+        const rect = canvas.getBoundingClientRect();
+        pointer.x = event.clientX - rect.left;
+        pointer.y = event.clientY - rect.top;
+      } else {
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+      }
     }
 
     function onPointerDown(event: PointerEvent) {
-      pointer.x = event.clientX;
-      pointer.y = event.clientY;
-      spawnClickBurst(event.clientX, event.clientY);
+      if (scoped) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        // A click elsewhere on the page shouldn't spawn a burst inside a
+        // hero that happens to be scrolled off-screen.
+        if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
+        pointer.x = x;
+        pointer.y = y;
+        spawnClickBurst(x, y);
+      } else {
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+        spawnClickBurst(event.clientX, event.clientY);
+      }
     }
 
     function onVisibilityChange() {
       if (document.hidden) {
-        cancelAnimationFrame(rafId);
-        rafId = 0;
-      } else if (!rafId) {
-        lastTime = 0;
-        rafId = requestAnimationFrame(frame);
+        stopLoop();
+      } else {
+        startLoop();
       }
     }
 
     resize();
-    window.addEventListener("resize", resize);
+    startLoop();
+
+    let resizeObserver: ResizeObserver | undefined;
+    let intersectionObserver: IntersectionObserver | undefined;
+
+    if (scoped && canvas.parentElement) {
+      resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(canvas.parentElement);
+
+      // Several of these can exist on one page (or none, in the common
+      // case) — no reason to keep simulating one that's scrolled away.
+      intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          visible = entries[0].isIntersecting;
+          if (visible) startLoop();
+          else stopLoop();
+        },
+        { rootMargin: "200px" },
+      );
+      intersectionObserver.observe(canvas.parentElement);
+    } else {
+      window.addEventListener("resize", resize);
+    }
+
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     window.addEventListener("pointerdown", onPointerDown, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
-    rafId = requestAnimationFrame(frame);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      stopLoop();
+      resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [scoped, region, bursts, cap]);
 
   return (
     <canvas
       ref={canvasRef}
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0"
+      className={
+        scoped
+          ? "pointer-events-none absolute inset-0"
+          : "pointer-events-none fixed inset-0 z-0"
+      }
     />
   );
 }

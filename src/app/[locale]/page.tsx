@@ -3,8 +3,8 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ContactForm } from "@/components/contact-form";
 import { Hero } from "@/components/hero";
-import { Link } from "@/i18n/navigation";
-import { projects } from "@/lib/projects";
+import { StatsBand } from "@/components/stats-band";
+import { FeaturedWork } from "@/components/featured-work";
 import type { Locale } from "@/i18n/routing";
 
 export default async function Home({
@@ -49,33 +49,31 @@ export default async function Home({
           __html: JSON.stringify(personSchema).replace(/</g, "\\u003c"),
         }}
       />
+      <a
+        href="#work"
+        className="bg-accent text-accent-foreground sr-only rounded-br-lg px-4 py-2.5 text-sm font-bold focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50"
+      >
+        {t("skipToWork")}
+      </a>
+
       <Header />
+
       <main className="flex-1">
-        <Hero name={t("name")} role={t("role")} />
-
-        <section id="projects" className="mx-auto max-w-3xl px-6 py-24">
-          <h2 className="text-sm font-medium tracking-wide uppercase">
-            {t("featuredProjects")}
-          </h2>
-          <ul className="mt-4 flex flex-col gap-3">
-            {projects.map((project) => (
-              <li key={project.slug}>
-                <Link
-                  href={`/projects/${project.slug}`}
-                  className="border-border hover:border-accent block cursor-pointer rounded-lg border px-4 py-3 transition-colors"
-                >
-                  <h3 className="font-medium">{project.title}</h3>
-                  <span className="text-muted-foreground block text-sm">
-                    {project.tagline[currentLocale]}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-
+        <Hero
+          name={t("name")}
+          role={t("role")}
+          availability={t("availability")}
+          intro={t("intro")}
+          ctaContact={t("ctaContact")}
+          ctaResume={t("ctaResume")}
+          replyNote={t("replyNote")}
+          resumeHref={"/" + currentLocale + "/resume"}
+        />
+        <StatsBand locale={currentLocale} />
+        <FeaturedWork locale={currentLocale} />
         <ContactForm />
       </main>
+
       <Footer />
     </div>
   );

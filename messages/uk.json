@@ -4,10 +4,23 @@
     "description": "Портфоліо fullstack-розробника: проєкти на Next.js, Node.js/Express і Cloudflare Workers — зокрема Svitanok, персональний Telegram-асистент у щоденному продакшн-використанні. Відкритий до різних форматів співпраці.",
     "keywords": "Юшко Назар, Назар Юшко розробник, Fullstack розробник Україна, Next.js розробник Львів, JavaScript розробник портфоліо"
   },
+  "Nav": {
+    "work": "Проєкти",
+    "resume": "Резюме",
+    "contact": "Контакти"
+  },
   "HomePage": {
     "name": "Yushko Nazar",
     "role": "Fullstack-розробник",
-    "featuredProjects": "Ключові проєкти"
+    "availability": "Відкритий до роботи — віддалено, гібрид, фріланс",
+    "intro": "Роблю full-stack вебзастосунки від початку до продакшену — Node.js і Next.js спереду, Cloudflare Workers і реальні обмеження проду позаду.",
+    "ctaContact": "Написати мені",
+    "ctaResume": "Резюме ↗",
+    "replyNote": "зазвичай відповідаю\nпротягом дня",
+    "skipToWork": "Перейти до проєктів",
+    "selectedWork": "Вибрані проєкти",
+    "workHint": "3 проєкти · наведіть для деталей",
+    "caseStudy": "Читати кейс"
   },
   "ProjectPage": {
     "stack": "Стек",
@@ -21,14 +34,22 @@
     "backToProjects": "Усі проєкти"
   },
   "ContactForm": {
-    "heading": "Зв'язатися",
+    "heading": "Напишіть мені.",
+    "intro": "Робота, фріланс або питання про те, як щось зроблено. Лист іде прямо в мою пошту — зазвичай відповідаю протягом дня.",
     "name": "Ім'я",
     "email": "Email",
     "message": "Повідомлення",
+    "namePlaceholder": "Ваше ім'я",
+    "emailPlaceholder": "you@company.com",
+    "messagePlaceholder": "Над чим ви працюєте?",
+    "privacyNote": "Захищено Turnstile · нічого не зберігається в базі",
     "submit": "Надіслати",
-    "submitting": "Надсилаємо…",
-    "success": "Дякую — повідомлення надіслано.",
-    "error": "Щось пішло не так. Спробуй ще раз або напиши напряму на hello@yushko.dev."
+    "submitting": "Надсилаю…",
+    "success": "Дякую — повідомлення в дорозі. Зазвичай відповідаю протягом дня.",
+    "error": "Щось пішло не так. Спробуйте ще раз або напишіть на hello@yushko.dev.",
+    "errorRequired": "Напишіть, як до вас звертатися.",
+    "errorEmail": "Вкажіть повну адресу пошти, щоб я міг відповісти.",
+    "errorMessage": "Одного-двох речень достатньо — головне не порожньо."
   },
   "ResumePage": {
     "title": "Резюме",

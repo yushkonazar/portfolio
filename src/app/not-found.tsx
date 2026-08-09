@@ -17,19 +17,31 @@ export default function NotFound() {
     <html lang="en" className={manrope.variable}>
       <body>
         <SiteBackground />
-        <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-6 py-24">
-          <p className="text-accent-bright text-sm font-medium">404</p>
-          <h1 className="mt-3 text-3xl font-semibold">Page not found</h1>
-          <p className="text-muted-foreground mt-4 leading-relaxed">
-            That page doesn&apos;t exist — it may have moved, or the link may be
-            wrong.
+        <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center px-6 py-24 text-center">
+          <p className="text-[76px] leading-none font-extrabold tracking-[-0.045em]">
+            404
           </p>
-          <Link
-            href="/"
-            className="border-border hover:border-accent mt-8 inline-block w-fit rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
-          >
-            Go to the homepage
-          </Link>
+          <h1 className="mt-2.5 text-base font-medium md:text-lg">
+            This page cracked off somewhere.
+          </h1>
+          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+            The link may be old, or I moved the page. The work is all one click
+            away.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2.5">
+            <Link
+              href="/"
+              className="bg-accent text-accent-foreground hover:bg-accent-bright flex h-11 items-center rounded-lg px-5 text-sm font-bold transition-colors"
+            >
+              Back home
+            </Link>
+            <Link
+              href="/#work"
+              className="border-border hover:border-muted-foreground flex h-11 items-center rounded-lg border px-[18px] text-sm font-semibold transition-colors"
+            >
+              See the projects
+            </Link>
+          </div>
         </main>
       </body>
     </html>

@@ -4,10 +4,23 @@
     "description": "Fullstack developer portfolio: Next.js, Node.js/Express, and Cloudflare Workers projects — including Svitanok, a personal Telegram assistant in daily production use. Open to remote, hybrid, and freelance work.",
     "keywords": "Yushko Nazar, Nazar Yushko developer, Nazar Yushko portfolio, Fullstack developer Ukraine, Next.js developer Lviv, JavaScript developer portfolio, Node.js Express developer"
   },
+  "Nav": {
+    "work": "Work",
+    "resume": "Resume",
+    "contact": "Contact"
+  },
   "HomePage": {
     "name": "Yushko Nazar",
     "role": "Fullstack Developer",
-    "featuredProjects": "Featured projects"
+    "availability": "Available — remote, hybrid, freelance",
+    "intro": "I build and ship full-stack web apps end to end — Node.js and Next.js on the front, Cloudflare Workers and real production constraints behind them.",
+    "ctaContact": "Get in touch",
+    "ctaResume": "Resume ↗",
+    "replyNote": "usually reply\nwithin a day",
+    "skipToWork": "Skip to work",
+    "selectedWork": "Selected work",
+    "workHint": "3 projects · hover for the detail",
+    "caseStudy": "Read the case study"
   },
   "ProjectPage": {
     "stack": "Stack",
@@ -21,14 +34,22 @@
     "backToProjects": "All projects"
   },
   "ContactForm": {
-    "heading": "Get in touch",
+    "heading": "Let's talk.",
+    "intro": "Roles, freelance work, or a question about how something was built. Straight to my inbox — usually a reply within a day.",
     "name": "Name",
     "email": "Email",
     "message": "Message",
+    "namePlaceholder": "Jane Doe",
+    "emailPlaceholder": "jane@company.com",
+    "messagePlaceholder": "What are you working on?",
+    "privacyNote": "Turnstile-protected · nothing stored in a database",
     "submit": "Send message",
     "submitting": "Sending…",
-    "success": "Thanks — your message is on its way.",
-    "error": "Something went wrong. Please try again or email hello@yushko.dev directly."
+    "success": "Thanks — your message is on its way. I usually reply within a day.",
+    "error": "Something went wrong. Please try again or email hello@yushko.dev directly.",
+    "errorRequired": "Tell me who you are so I know how to reply.",
+    "errorEmail": "Enter a full email address so I can reply.",
+    "errorMessage": "A sentence or two is enough — just not empty."
   },
   "ResumePage": {
     "title": "Resume",
