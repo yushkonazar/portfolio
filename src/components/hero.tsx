@@ -33,15 +33,6 @@ export function Hero({
       <div className="hero-crack-mask pointer-events-none absolute inset-0">
         <SiteBackground scoped region="right" bursts={2} cap={16} />
       </div>
-      {/* The single warm source in this corner. The portrait used to cast its
-          own amber shadow on top of this one and the two stacked into a muddy
-          blob; now this sits where light would fall on the lit half of the
-          face. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-16 right-24 h-[560px] w-[480px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.22),rgba(217,119,6,0)_62%)]"
-      />
-
       <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start gap-8 px-6 pt-8 pb-10 md:flex-row md:items-end md:gap-10 md:px-11 md:pt-9 md:pb-11">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
@@ -96,25 +87,35 @@ export function Hero({
           </div>
         </div>
 
-        {/* A cut-out, so there is no frame to blend and nothing for the
-            fractures to show through: its edge pixels already sit at rgb(10-15)
-            against a #050505 page, and the opaque silhouette hides the canvas
-            behind it.
-
-            `priority`, not lazy: a real PageSpeed run on the previous design
-            named this element the desktop LCP candidate, and lazy-loading the
-            LCP image is exactly the mistake that diagnostic exists to catch.
-            It cost 131KB when the file was the full avatar.jpg — at 29.5KB
-            it's cheap enough that eager-loading it everywhere (including the
-            mobile HTML that never renders it) is the right trade. */}
-        <Image
-          src="/portrait.webp"
-          alt={name}
-          width={297}
-          height={512}
-          priority
-          className="portrait-enter hidden h-[380px] w-auto shrink-0 md:block"
-        />
+        {/* A cut-out, so there is no frame to blend: its edge pixels already
+            sit at rgb(10-15) against a #050505 page. The glow lives only on
+            the near edge, where the image faces the text — top, right and
+            bottom stay exactly the page colour, so nothing reads as a pasted
+            rectangle. It's sized to the image's own box (not the section),
+            so it can't bleed past edges the photo doesn't touch. */}
+        <div className="relative hidden shrink-0 md:block">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 w-2/5 bg-[linear-gradient(90deg,rgba(217,119,6,0.32),rgba(217,119,6,0)_100%)]"
+          />
+          {/* `priority`, not lazy: a real PageSpeed run on the previous design
+              named this element the desktop LCP candidate, and lazy-loading
+              the LCP image is exactly the mistake that diagnostic exists to
+              catch. It cost 131KB as the full avatar.jpg — at 29.5KB it's
+              cheap enough that eager-loading it everywhere (including the
+              mobile HTML that never renders it) is the right trade.
+              `relative` stacks it above the glow div regardless of DOM
+              order among positioned siblings, so its opaque pixels cover
+              the glow and only the transparent cutout lets it through. */}
+          <Image
+            src="/portrait.webp"
+            alt={name}
+            width={297}
+            height={512}
+            priority
+            className="portrait-enter relative h-[380px] w-auto"
+          />
+        </div>
       </div>
     </section>
   );
