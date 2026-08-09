@@ -22,7 +22,7 @@ export default async function Image({
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          backgroundColor: "#0c0c0c",
+          backgroundColor: "#0b0b0b",
           padding: "96px",
           position: "relative",
         }}

@@ -3,15 +3,17 @@
 @theme {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 
-  /* Not a taste call — measured against the hero portrait, which is a cut-out
-     of a photo shot on black. What abuts the page is the outermost 2px ring
-     of solid pixels (3599 of them): median 12, mode 10, p75 20. rgb(12) puts
-     the median step at exactly 0 and keeps 65.7% of that ring within ±3 of
-     the page, the highest of any candidate from #040404 to #191919.
-     Its bright tail (p90 36) is the lit cheek and shoulder — real photo
-     content, visible against any dark page, and not a seam to chase.
+  /* Tuned to the hero portrait, which is a cut-out of a photo shot on black.
+     What abuts the page is the outermost 2px ring of solid pixels (3599 of
+     them): mode 10, median 12, p75 20. Across every candidate from #040404
+     to #191919 the ring matches best at rgb(12) — 65.7% of it within ±3 —
+     with rgb(11) just behind at 63.2% and a median step of +1. This sits at
+     rgb(11) by choice: a step that small is under the visible threshold, and
+     the darker base holds the rest of the palette better.
+     The ring's bright tail (p90 36) is the lit cheek and shoulder — real
+     photo content, visible against any dark page, not a seam to chase.
      Also clears pure #000, per design guidance (OLED smear / flat look). */
-  --color-background: #0c0c0c;
+  --color-background: #0b0b0b;
   --color-foreground: #fafafa;
 
   --color-card: #0f0f0f;
@@ -20,20 +22,21 @@
   --color-muted: #171717;
   --color-muted-foreground: #a1a1aa;
 
-  /* 3.10:1 on the page and 3.03:1 on the #0f0f0f bands — WCAG 1.4.11 wants
+  /* 3.11:1 on the page and 3.06:1 on the #0e0e0e bands — WCAG 1.4.11 wants
      3:1 for the borders that identify inputs, cards and pills. #27272a
      looked right but sat at 1.37:1, which meant the edges were effectively
-     invisible. (Was 3.23:1 before the background moved to #0c0c0c; every
-     token was re-measured against the new base, and this one — the tightest
-     — still clears, so the background is as light as it can go.)
+     invisible. This is the tightest pair in the palette, so it's the one
+     that caps how light the background may go: at rgb(12) it reads 3.10 and
+     3.03, still passing but with nothing left. Re-measure it before moving
+     the background up again.
      NOTE: border token only. Text below 18px needs 4.5:1 — use
-     --color-muted-foreground (7.6:1) for dim copy, never this. */
+     --color-muted-foreground (7.7:1) for dim copy, never this. */
   --color-border: #5f5f68;
 
   /* Ember/amber accent — ties the palette to the hero crack-shader glow */
   --color-accent: #d97706;
   --color-accent-bright: #f59e0b;
-  --color-accent-foreground: #0c0c0c;
+  --color-accent-foreground: #0b0b0b;
 
   --color-destructive: #ef4444;
   --color-ring: #d97706;

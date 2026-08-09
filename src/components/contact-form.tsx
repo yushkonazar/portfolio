@@ -163,7 +163,7 @@ export function ContactForm() {
     // section it put this column a gutter left of the work list above it.
     <section
       id="contact"
-      className="relative overflow-hidden border-t border-white/[0.09] bg-[#0f0f0f]"
+      className="relative overflow-hidden border-t border-white/[0.09] bg-[#0e0e0e]"
     >
       <div
         aria-hidden
