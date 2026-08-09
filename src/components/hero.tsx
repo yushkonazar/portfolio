@@ -23,7 +23,11 @@ export function Hero({
   resumeHref,
 }: HeroProps) {
   return (
-    <section className="relative overflow-hidden px-6 pt-8 pb-10 md:px-11 md:pt-9 md:pb-11">
+    // Padding lives on the inner container, not here: every other section on
+    // the page pads inside its max-width box, and putting it on the section
+    // left the hero's text a full gutter to the left of everything below it.
+    // The absolute layers below still span the section edge to edge.
+    <section className="relative overflow-hidden">
       {/* The fracture animation, confined to the hero and masked away from the
           headline so it never fights the type. */}
       <div className="hero-crack-mask pointer-events-none absolute inset-0">
@@ -38,18 +42,19 @@ export function Hero({
         className="pointer-events-none absolute -top-16 right-24 h-[560px] w-[480px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.22),rgba(217,119,6,0)_62%)]"
       />
 
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start gap-8 md:flex-row md:items-end md:gap-10">
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start gap-8 px-6 pt-8 pb-10 md:flex-row md:items-end md:gap-10 md:px-11 md:pt-9 md:pb-11">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
-            {/* Phones never saw the portrait but still paid to download it.
-                A small round crop costs almost nothing and gives them a face. */}
+            {/* Phones never see the portrait, so they get a face here instead —
+                cut from the original photo, since the cut-out's transparent
+                background reads badly inside a circle. */}
             <Image
-              src="/avatar.jpg"
+              src="/avatar-sm.webp"
               alt=""
-              width={104}
-              height={104}
-              sizes="44px"
-              className="h-11 w-11 shrink-0 rounded-full border border-white/15 object-cover object-[45%_28%] md:hidden"
+              width={128}
+              height={128}
+              loading="lazy"
+              className="h-11 w-11 shrink-0 rounded-full border border-white/15 md:hidden"
             />
             <span className="text-accent-bright flex min-w-0 items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase">
               <span className="bg-accent-bright ember-pulse h-1.5 w-1.5 rounded-full" />
@@ -91,17 +96,18 @@ export function Hero({
           </div>
         </div>
 
-        {/* No `sizes` here meant Next served an 800–1600px file into a 228px
-            box. The frame, the border and the second amber glow are gone: the
-            crop now sits on the eye, and the edges dissolve into the page. */}
+        {/* A cut-out, so there is no frame to blend and nothing for the
+            fractures to show through: its edge pixels already sit at rgb(10-15)
+            against a #050505 page, and the opaque silhouette hides the canvas
+            behind it. Lazy on purpose — eager makes Next preload it on phones,
+            where it is display:none and never drawn. */}
         <Image
-          src="/avatar.jpg"
+          src="/portrait.webp"
           alt={name}
-          width={800}
-          height={1200}
-          sizes="240px"
-          loading="eager"
-          className="hero-portrait-mask portrait-enter hidden h-[320px] w-[236px] shrink-0 object-cover object-[45%_30%] md:block"
+          width={297}
+          height={512}
+          loading="lazy"
+          className="portrait-enter hidden h-[380px] w-auto shrink-0 md:block"
         />
       </div>
     </section>

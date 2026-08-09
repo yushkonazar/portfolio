@@ -1,8 +1,17 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { ProjectRow, type ProjectRowLink } from "./project-row";
 import { Reveal } from "./reveal";
+
+/** How long an open row survives after the pointer leaves the list. */
+const AUTO_CLOSE_MS = 2000;
 
 export type ShowcaseRow = {
   slug: string;
@@ -30,42 +39,83 @@ export function WorkShowcase({
 }) {
   const [active, setActive] = useState<number | null>(null);
   const headers = useRef<(HTMLDivElement | null)[]>([]);
-  // Viewport top of the row that is opening, captured before React re-renders,
-  // so the layout effect can put it back where the pointer left it.
-  const anchorTop = useRef<number | null>(null);
+  // Which header to keep still while the list resizes, and where it was before
+  // React re-rendered. Set on the way in; the layout effect reads it back and
+  // clears it. Null means "let the page move" — that's the scroll-driven case.
+  const anchor = useRef<{ index: number; top: number } | null>(null);
+  const section = useRef<HTMLElement>(null);
+  const closeTimer = useRef<number | null>(null);
 
-  const open = useCallback((index: number, anchor: boolean) => {
-    // Measured here, from the same ref the layout effect reads back, so the
-    // before/after comparison can't drift by an element's padding.
-    anchorTop.current = anchor
-      ? (headers.current[index]?.getBoundingClientRect().top ?? null)
-      : null;
-    setActive(index);
+  const measure = useCallback((index: number) => {
+    const top = headers.current[index]?.getBoundingClientRect().top;
+    anchor.current = top === undefined ? null : { index, top };
   }, []);
 
-  const close = useCallback((index: number) => {
-    setActive((current) => (current === index ? null : current));
-  }, []);
+  const open = useCallback(
+    (index: number, withAnchor: boolean) => {
+      // Measured here, from the same ref the layout effect reads back, so the
+      // before/after comparison can't drift by an element's padding.
+      if (withAnchor) measure(index);
+      else anchor.current = null;
+      setActive(index);
+    },
+    [measure],
+  );
 
-  // Pin the row the pointer is on. Moving from an open row to one below it
-  // collapses the first, which would otherwise pull the second up from under
-  // the cursor mid-gesture.
+  const close = useCallback(
+    (index: number) => {
+      setActive((current) => {
+        if (current !== index) return current;
+        return null;
+      });
+      measure(index);
+    },
+    [measure],
+  );
+
+  // Pin the row the gesture is on. Opening one row collapses another above it,
+  // which would otherwise pull the list up from under the cursor; closing one
+  // does the same to whatever the visitor has scrolled to below.
   useLayoutEffect(() => {
-    if (active === null || anchorTop.current === null) return;
-    const header = headers.current[active];
+    const pinned = anchor.current;
+    anchor.current = null;
+    if (!pinned) return;
+    const header = headers.current[pinned.index];
     if (!header) return;
-    const delta = header.getBoundingClientRect().top - anchorTop.current;
-    anchorTop.current = null;
+    const delta = header.getBoundingClientRect().top - pinned.top;
     if (Math.abs(delta) < 1) return;
     window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
   }, [active]);
 
+  const cancelAutoClose = useCallback(() => {
+    if (closeTimer.current === null) return;
+    window.clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+  }, []);
+
+  // Once the pointer is gone, an open row is just stale state taking up the
+  // screen. Keyboard users are exempt: focus inside the list is a deliberate
+  // position, and collapsing under it would move the thing they're on.
+  const scheduleAutoClose = useCallback(() => {
+    cancelAutoClose();
+    if (active === null) return;
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null;
+      const element = section.current;
+      if (element && element.contains(document.activeElement)) return;
+      close(active);
+    }, AUTO_CLOSE_MS);
+  }, [active, cancelAutoClose, close]);
+
+  useEffect(() => cancelAutoClose, [cancelAutoClose]);
+
   return (
     <>
-      {/* No onMouseLeave reset: collapsing the open row when the pointer
-          wanders off jumps the page for no reason the visitor asked for. */}
       <section
         id="work"
+        ref={section}
+        onMouseEnter={cancelAutoClose}
+        onMouseLeave={scheduleAutoClose}
         className="mx-auto w-full max-w-5xl px-6 py-8 md:px-11 md:py-9"
       >
         <Reveal className="flex items-baseline justify-between">

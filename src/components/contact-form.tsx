@@ -15,10 +15,11 @@ type FieldErrors = { name?: string; email?: string; message?: string };
 const FIELD_CLASS =
   "border-border focus:border-accent focus:shadow-[0_0_0_3px_rgba(217,119,6,0.22)] rounded-lg border bg-white/[0.02] px-3.5 py-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-white/25";
 
-// If the widget hasn't drawn an iframe by now, the script is blocked or the
-// domain isn't allowed — either way it will never verify, so say so rather
-// than leaving a dead submit button.
-const VERIFY_TIMEOUT_MS = 6000;
+// Only a deadline for giving up, not the moment of truth: success is detected
+// the instant the widget draws its iframe. Six seconds used to be both, which
+// declared failure on any connection slow enough to still be fetching the
+// script — a throttled phone reached it easily.
+const VERIFY_DEADLINE_MS = 15000;
 
 // The address stays in `value` even though it isn't drawn — it's what the
 // button announces to a screen reader and what shows on hover as a title.
@@ -53,11 +54,42 @@ export function ContactForm() {
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const rendered = turnstileRef.current?.querySelector("iframe");
-      setVerification(rendered ? "ready" : "failed");
-    }, VERIFY_TIMEOUT_MS);
-    return () => clearTimeout(timer);
+    const host = turnstileRef.current;
+    if (!host) return;
+
+    let settled = false;
+    const settle = (state: Verification) => {
+      if (settled) return;
+      settled = true;
+      observer.disconnect();
+      window.clearTimeout(deadline);
+      window.clearTimeout(initial);
+      setVerification(state);
+    };
+
+    // Turnstile renders whenever its script finishes, which is not on any
+    // schedule we control — so watch for the iframe instead of guessing when
+    // to look for it.
+    const observer = new MutationObserver(() => {
+      if (host.querySelector("iframe")) settle("ready");
+    });
+    observer.observe(host, { childList: true, subtree: true });
+
+    // Covers the case where the script was cached and had already rendered
+    // before this effect ran, which the observer would never report.
+    const initial = window.setTimeout(() => {
+      if (host.querySelector("iframe")) settle("ready");
+    }, 0);
+
+    const deadline = window.setTimeout(() => {
+      settle(host.querySelector("iframe") ? "ready" : "failed");
+    }, VERIFY_DEADLINE_MS);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(deadline);
+      window.clearTimeout(initial);
+    };
   }, []);
 
   function validate(formData: FormData): FieldErrors {
@@ -125,15 +157,17 @@ export function ContactForm() {
   const showTypingPlaceholder = !messageFocused && messageValue === "";
 
   return (
+    // Padding inside the max-width box, matching every other section — on the
+    // section it put this column a gutter left of the work list above it.
     <section
       id="contact"
-      className="relative overflow-hidden border-t border-white/[0.09] bg-[#080808] px-6 py-10 md:px-11 md:py-11"
+      className="relative overflow-hidden border-t border-white/[0.09] bg-[#080808]"
     >
       <div
         aria-hidden
         className="pointer-events-none absolute bottom-[-230px] left-[38%] h-[420px] w-[520px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.18),rgba(217,119,6,0)_62%)]"
       />
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 md:flex-row md:gap-11">
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10 md:flex-row md:gap-11 md:px-11 md:py-11">
         <Reveal className="md:w-[320px] md:shrink-0">
           <h2 className="m-0 text-[30px] leading-[1.05] font-extrabold tracking-[-0.03em] md:text-[38px]">
             {t("heading")}
