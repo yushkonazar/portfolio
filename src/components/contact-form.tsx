@@ -12,8 +12,10 @@ type Status = "idle" | "submitting" | "success" | "error";
 type Verification = "loading" | "ready" | "failed";
 type FieldErrors = { name?: string; email?: string; message?: string };
 
+// placeholder:text-white/25 measured at ~2.2:1 against the field background —
+// well under the 4.5:1 WCAG AA floor. /50 lands at ~5.3:1.
 const FIELD_CLASS =
-  "border-border focus:border-accent focus:shadow-[0_0_0_3px_rgba(217,119,6,0.22)] rounded-lg border bg-white/[0.02] px-3.5 py-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-white/25";
+  "border-border focus:border-accent focus:shadow-[0_0_0_3px_rgba(217,119,6,0.22)] rounded-lg border bg-white/[0.02] px-3.5 py-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-white/50";
 
 // Only a deadline for giving up, not the moment of truth: success is detected
 // the instant the widget draws its iframe. Six seconds used to be both, which

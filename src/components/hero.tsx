@@ -99,14 +99,20 @@ export function Hero({
         {/* A cut-out, so there is no frame to blend and nothing for the
             fractures to show through: its edge pixels already sit at rgb(10-15)
             against a #050505 page, and the opaque silhouette hides the canvas
-            behind it. Lazy on purpose — eager makes Next preload it on phones,
-            where it is display:none and never drawn. */}
+            behind it.
+
+            `priority`, not lazy: a real PageSpeed run on the previous design
+            named this element the desktop LCP candidate, and lazy-loading the
+            LCP image is exactly the mistake that diagnostic exists to catch.
+            It cost 131KB when the file was the full avatar.jpg — at 29.5KB
+            it's cheap enough that eager-loading it everywhere (including the
+            mobile HTML that never renders it) is the right trade. */}
         <Image
           src="/portrait.webp"
           alt={name}
           width={297}
           height={512}
-          loading="lazy"
+          priority
           className="portrait-enter hidden h-[380px] w-auto shrink-0 md:block"
         />
       </div>

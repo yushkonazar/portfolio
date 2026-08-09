@@ -225,16 +225,28 @@ export function ProjectRow({
                 <a
                   key={link.href + link.label}
                   href={link.href}
+                  // Every row uses the same label ("Read the case study" etc.)
+                  // for a different destination — indistinguishable out of
+                  // context for anyone navigating by a links list.
+                  aria-label={`${link.label} — ${title}`}
                   target={link.href.startsWith("http") ? "_blank" : undefined}
                   rel={link.href.startsWith("http") ? "noreferrer" : undefined}
-                  className={cn(
-                    "focus-visible:outline-accent-bright border-b pb-px text-[13.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
-                    link.accent
-                      ? "text-accent-bright border-accent-bright/35 hover:border-accent-bright"
-                      : "border-white/25 hover:border-white",
-                  )}
+                  // The visible underline stays tight to the text on an inner
+                  // span; the tap target itself is padded out on a negative
+                  // margin, so touch reaches it well before the row underneath
+                  // that toggles open/closed on the same gesture.
+                  className="focus-visible:outline-accent-bright group -m-2 inline-flex items-center p-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  {link.label}
+                  <span
+                    className={cn(
+                      "border-b pb-px text-[13.5px] font-bold transition-colors",
+                      link.accent
+                        ? "text-accent-bright border-accent-bright/35 group-hover:border-accent-bright"
+                        : "border-white/25 group-hover:border-white",
+                    )}
+                  >
+                    {link.label}
+                  </span>
                 </a>
               ))}
               {note && (

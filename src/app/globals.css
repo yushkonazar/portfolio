@@ -72,12 +72,11 @@
   }
 }
 
+/* Moves the highlight with `transform`, not `background-position` — the
+   latter repaints every frame on the main thread instead of compositing. */
 @keyframes skeleton-shimmer {
-  0% {
-    background-position: -340px 0;
-  }
   100% {
-    background-position: 340px 0;
+    transform: translateX(100%);
   }
 }
 
@@ -87,10 +86,20 @@
     animation: ember-pulse 2.6s ease-in-out infinite;
   }
 
-  /* Holds the exact aspect ratio while a screenshot loads, so nothing shifts. */
+  /* Holds the exact aspect ratio while a screenshot loads, so nothing shifts.
+     The moving highlight is a separate layer rather than the base background
+     itself, so its width tracks the element instead of a fixed pixel band. */
   .skeleton {
-    background: linear-gradient(90deg, #0d0d0d 0, #171717 50%, #0d0d0d 100%);
-    background-size: 340px 100%;
+    position: relative;
+    overflow: hidden;
+    background: #0d0d0d;
+  }
+  .skeleton::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, #171717, transparent);
+    transform: translateX(-100%);
     animation: skeleton-shimmer 1.5s linear infinite;
   }
 
@@ -123,7 +132,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ember-pulse,
-  .skeleton,
+  .skeleton::before,
   .portrait-enter,
   .reveal-up {
     animation: none;

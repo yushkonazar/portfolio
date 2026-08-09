@@ -66,7 +66,9 @@ export function TypingPlaceholder({ phrases }: { phrases: string[] }) {
   return (
     <span
       aria-hidden
-      className="text-muted-foreground/55 pointer-events-none absolute top-3 left-3.5 text-sm select-none"
+      // /55 measured at ~3:1 against the field background — below the 4.5:1
+      // WCAG AA floor for 14px text. /75 lands at ~4.75:1.
+      className="text-muted-foreground/75 pointer-events-none absolute top-3 left-3.5 text-sm select-none"
     >
       {reducedMotion ? (phrases[0] ?? "") : text}
       {!reducedMotion && (
