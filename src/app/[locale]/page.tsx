@@ -3,7 +3,6 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ContactForm } from "@/components/contact-form";
 import { Hero } from "@/components/hero";
-import { StatsBand } from "@/components/stats-band";
 import { FeaturedWork } from "@/components/featured-work";
 import type { Locale } from "@/i18n/routing";
 
@@ -69,7 +68,8 @@ export default async function Home({
           replyNote={t("replyNote")}
           resumeHref={"/" + currentLocale + "/resume"}
         />
-        <StatsBand locale={currentLocale} />
+        {/* Renders the stats band too — the band is a readout of whichever
+            project is open below, so the two share state. */}
         <FeaturedWork locale={currentLocale} />
         <ContactForm />
       </main>

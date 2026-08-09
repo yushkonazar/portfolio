@@ -1,20 +1,46 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Script from "next/script";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { TypingPlaceholder } from "./typing-placeholder";
+import { Reveal } from "./reveal";
 
 type Status = "idle" | "submitting" | "success" | "error";
+type Verification = "loading" | "ready" | "failed";
 type FieldErrors = { name?: string; email?: string; message?: string };
 
 const FIELD_CLASS =
   "border-border focus:border-accent focus:shadow-[0_0_0_3px_rgba(217,119,6,0.22)] rounded-lg border bg-white/[0.02] px-3.5 py-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-white/25";
 
+// If the widget hasn't drawn an iframe by now, the script is blocked or the
+// domain isn't allowed — either way it will never verify, so say so rather
+// than leaving a dead submit button.
+const VERIFY_TIMEOUT_MS = 6000;
+
+const CONTACTS = [
+  { label: "Email", value: "hello@yushko.dev", href: "mailto:hello@yushko.dev" },
+  { label: "GitHub", value: "github.com/yushkonazar", href: "https://github.com/yushkonazar" },
+  { label: "LinkedIn", value: "linkedin.com/in/nazar-yushko", href: "https://linkedin.com/in/nazar-yushko" },
+];
+
 export function ContactForm() {
   const t = useTranslations("ContactForm");
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [verification, setVerification] = useState<Verification>("loading");
+  const [messageValue, setMessageValue] = useState("");
+  const [messageFocused, setMessageFocused] = useState(false);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const rendered = turnstileRef.current?.querySelector("iframe");
+      setVerification(rendered ? "ready" : "failed");
+    }, VERIFY_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   function validate(formData: FormData): FieldErrors {
     const next: FieldErrors = {};
@@ -69,10 +95,16 @@ export function ContactForm() {
 
       setStatus("success");
       form.reset();
+      setMessageValue("");
     } catch {
       setStatus("error");
     }
   }
+
+  // Memoised because a fresh array each render would be a new dependency for
+  // the placeholder's effect, restarting its timer on every keystroke.
+  const prompts = useMemo(() => t("messagePrompts").split("|"), [t]);
+  const showTypingPlaceholder = !messageFocused && messageValue === "";
 
   return (
     <section
@@ -84,27 +116,43 @@ export function ContactForm() {
         className="pointer-events-none absolute bottom-[-230px] left-[38%] h-[420px] w-[520px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.18),rgba(217,119,6,0)_62%)]"
       />
       <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 md:flex-row md:gap-11">
-        <div className="md:w-[320px] md:shrink-0">
+        <Reveal className="md:w-[320px] md:shrink-0">
           <h2 className="m-0 text-[30px] leading-[1.05] font-extrabold tracking-[-0.03em] md:text-[38px]">
             {t("heading")}
           </h2>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed text-pretty md:text-[14.5px]">
             {t("intro")}
           </p>
-          <div className="mt-4 flex flex-col gap-1.5">
-            <a href="mailto:hello@yushko.dev" className="hover:text-accent-bright font-mono text-[13.5px] leading-[1.6] transition-colors">
-              hello@yushko.dev
-            </a>
-            <a href="https://github.com/yushkonazar" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-accent-bright font-mono text-[13.5px] leading-[1.6] transition-colors">
-              github.com/yushkonazar
-            </a>
-            <a href="https://linkedin.com/in/nazar-yushko" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-accent-bright font-mono text-[13.5px] leading-[1.6] transition-colors">
-              linkedin.com/in/nazar-yushko
-            </a>
-          </div>
-        </div>
 
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+          {/* These are the only copies on the page now, so they carry the
+              weight the footer used to share — hence cards, not a text list. */}
+          <div className="mt-5 flex flex-col gap-2">
+            {CONTACTS.map((contact) => (
+              <a
+                key={contact.label}
+                href={contact.href}
+                {...(contact.href.startsWith("http")
+                  ? { target: "_blank", rel: "noreferrer" }
+                  : {})}
+                className="group border-border hover:border-accent focus-visible:outline-accent-bright flex items-center justify-between gap-3 rounded-lg border px-3.5 py-2.5 transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <span className="text-muted-foreground font-mono text-[10px] tracking-[0.14em] uppercase">
+                  {contact.label}
+                </span>
+                <span className="group-hover:text-accent-bright font-mono text-[13px] transition-colors">
+                  {contact.value}
+                </span>
+              </a>
+            ))}
+          </div>
+        </Reveal>
+
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async
+          defer
+          onError={() => setVerification("failed")}
+        />
 
         <form onSubmit={handleSubmit} noValidate className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
@@ -155,17 +203,23 @@ export function ContactForm() {
             <label htmlFor="message" className="text-muted-foreground font-mono text-[11px] tracking-[0.1em] uppercase">
               {t("message")}
             </label>
-            <textarea
-              id="message"
-              name="message"
-              required
-              maxLength={5000}
-              rows={3}
-              aria-invalid={Boolean(errors.message)}
-              aria-describedby={errors.message ? "message-error" : undefined}
-              placeholder={t("messagePlaceholder")}
-              className={cn(FIELD_CLASS, "resize-y", errors.message && "border-destructive bg-destructive/[0.06]")}
-            />
+            <div className="relative">
+              <textarea
+                id="message"
+                name="message"
+                required
+                maxLength={5000}
+                rows={3}
+                value={messageValue}
+                onChange={(event) => setMessageValue(event.target.value)}
+                onFocus={() => setMessageFocused(true)}
+                onBlur={() => setMessageFocused(false)}
+                aria-invalid={Boolean(errors.message)}
+                aria-describedby={errors.message ? "message-error" : undefined}
+                className={cn(FIELD_CLASS, "w-full resize-y", errors.message && "border-destructive bg-destructive/[0.06]")}
+              />
+              {showTypingPlaceholder && <TypingPlaceholder phrases={prompts} />}
+            </div>
             {errors.message && (
               <span id="message-error" className="text-destructive text-[12.5px]">
                 {errors.message}
@@ -173,7 +227,25 @@ export function ContactForm() {
             )}
           </div>
 
-          <div className="cf-turnstile md:col-span-2" data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+          {/* Hidden once it has done its job — a large "success" panel from a
+              third party is noise the visitor never asked to read. */}
+          <div
+            ref={turnstileRef}
+            className={cn(
+              "cf-turnstile md:col-span-2",
+              (status === "success" || verification === "failed") && "hidden",
+            )}
+            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+          />
+
+          {verification === "failed" && (
+            <p
+              role="alert"
+              className="text-muted-foreground border-border md:col-span-2 rounded-lg border border-dashed px-3.5 py-3 text-[13px] leading-relaxed"
+            >
+              {t("verifyFailed")}
+            </p>
+          )}
 
           <div className="flex flex-col gap-3 md:col-span-2 md:flex-row md:items-center md:justify-between">
             <span className="text-muted-foreground font-mono text-[11.5px] leading-[1.4]">
@@ -181,10 +253,11 @@ export function ContactForm() {
             </span>
             <button
               type="submit"
-              disabled={status === "submitting"}
+              disabled={status === "submitting" || verification === "failed"}
               className={cn(
                 "bg-accent text-accent-foreground hover:bg-accent-bright focus-visible:outline-accent-bright h-12 cursor-pointer rounded-lg px-7 text-[14.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 md:h-[46px]",
                 status === "submitting" && "cursor-wait opacity-60",
+                verification === "failed" && "cursor-not-allowed opacity-40",
               )}
             >
               {status === "submitting" ? t("submitting") : t("submit")}

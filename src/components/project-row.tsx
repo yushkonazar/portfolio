@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type FocusEvent, type KeyboardEvent } from "react";
+import { useCallback, type FocusEvent, type KeyboardEvent } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +19,23 @@ export type ProjectRowProps = {
   links: ProjectRowLink[];
   note?: string;
   last?: boolean;
+  open: boolean;
+  /**
+   * `anchor` asks the parent to pin this row where it is while the list
+   * resizes. The parent does the measuring — it owns the header ref, so
+   * measuring there guarantees the before/after readings are of the same
+   * element. Measuring the row here instead was off by the row's padding.
+   */
+  onOpen: (anchor: boolean) => void;
+  onClose: () => void;
+  registerHeader: (element: HTMLDivElement | null) => void;
 };
 
 /**
- * One row of the work list. Pointer devices open it on hover; touch and
- * keyboard open it on tap/Enter — the row is a real button with aria-expanded,
- * so it is never a hover-only affordance.
+ * One row of the work list. Open/closed state is owned by the parent so only
+ * one row is ever open and so the parent can compensate the scroll position
+ * when heights change — a row expanding above the cursor used to drag the
+ * whole list out from under it.
  */
 export function ProjectRow({
   title,
@@ -39,9 +50,11 @@ export function ProjectRow({
   links,
   note,
   last,
+  open,
+  onOpen,
+  onClose,
+  registerHeader,
 }: ProjectRowProps) {
-  const [open, setOpen] = useState(false);
-
   const canHover = useCallback(
     () =>
       typeof window !== "undefined" &&
@@ -53,12 +66,13 @@ export function ProjectRow({
     if (event.key !== "Enter" && event.key !== " ") return;
     if (event.target !== event.currentTarget) return;
     event.preventDefault();
-    setOpen((value) => !value);
+    if (open) onClose();
+    else onOpen(false);
   };
 
   const onBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setOpen(false);
+      onClose();
     }
   };
 
@@ -67,22 +81,34 @@ export function ProjectRow({
       role="button"
       tabIndex={0}
       aria-expanded={open}
-      onMouseEnter={() => canHover() && setOpen(true)}
-      onMouseLeave={() => canHover() && setOpen(false)}
-      onFocus={() => setOpen(true)}
+      onMouseEnter={() => {
+        if (!canHover()) return;
+        onOpen(true);
+      }}
+      onFocus={() => onOpen(false)}
       onBlur={onBlur}
       onClick={(event) => {
-        if (event.target === event.currentTarget) setOpen((value) => !value);
+        if (event.target !== event.currentTarget) return;
+        if (open) onClose();
+        else onOpen(true);
       }}
       onKeyDown={onKeyDown}
       className={cn(
-        "focus-visible:outline-accent-bright grid cursor-pointer border-t border-white/[0.12] py-4 transition-[grid-template-rows] duration-[450ms] ease-[cubic-bezier(.2,.8,.2,1)] focus-visible:outline-2 focus-visible:outline-offset-4 md:py-[18px]",
+        "focus-visible:outline-accent-bright grid cursor-pointer border-t border-white/[0.12] py-4 transition-[grid-template-rows] duration-[450ms] ease-[cubic-bezier(.2,.8,.2,1)] focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none md:py-[18px]",
         open ? "grid-rows-[auto_1fr]" : "grid-rows-[auto_0fr]",
         last && "border-b border-white/[0.12]",
       )}
     >
-      <div className="pointer-events-none flex items-center gap-3 md:gap-4">
-        <span className="shrink-0 text-[19px] font-bold tracking-[-0.02em] md:text-[26px]">
+      <div
+        ref={registerHeader}
+        className="pointer-events-none flex items-center gap-3 md:gap-4"
+      >
+        <span
+          className={cn(
+            "shrink-0 text-[19px] font-bold tracking-[-0.02em] transition-colors duration-300 md:text-[26px]",
+            open && "text-accent-bright",
+          )}
+        >
           {title}
         </span>
         <span
@@ -101,8 +127,8 @@ export function ProjectRow({
         <span
           aria-hidden
           className={cn(
-            "text-muted-foreground ml-auto shrink-0 text-xl transition-transform duration-300 md:ml-0",
-            open && "translate-x-1",
+            "text-muted-foreground ml-auto shrink-0 text-xl transition-transform duration-300 motion-reduce:transition-none md:ml-0",
+            open && "text-accent-bright translate-x-1",
           )}
         >
           →
@@ -110,7 +136,17 @@ export function ProjectRow({
       </div>
 
       <div className="min-h-0 overflow-hidden">
-        <div className="flex flex-col gap-4 pt-4 md:flex-row md:gap-5">
+        {/* The panel lags the row's own expansion slightly and rises into
+            place, so the two movements read as one gesture rather than a box
+            snapping open. */}
+        <div
+          className={cn(
+            "flex flex-col gap-4 pt-4 transition-[opacity,transform] duration-[420ms] ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none md:flex-row md:gap-5",
+            open
+              ? "translate-y-0 opacity-100 delay-[80ms]"
+              : "translate-y-2 opacity-0",
+          )}
+        >
           {screenshot ? (
             <div className="skeleton relative h-[150px] w-full shrink-0 overflow-hidden rounded-[10px] border border-white/[0.12] md:h-[184px] md:w-[340px]">
               <Image
