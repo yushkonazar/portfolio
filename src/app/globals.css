@@ -3,9 +3,15 @@
 @theme {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 
-  /* Near-black base, matched against the avatar photo.
-     Avoiding pure #000 per design-system guidance (OLED smear / flat look). */
-  --color-background: #050505;
+  /* Not a taste call — measured against the hero portrait, which is a cut-out
+     of a photo shot on black. What abuts the page is the outermost 2px ring
+     of solid pixels (3599 of them): median 12, mode 10, p75 20. rgb(12) puts
+     the median step at exactly 0 and keeps 65.7% of that ring within ±3 of
+     the page, the highest of any candidate from #040404 to #191919.
+     Its bright tail (p90 36) is the lit cheek and shoulder — real photo
+     content, visible against any dark page, and not a seam to chase.
+     Also clears pure #000, per design guidance (OLED smear / flat look). */
+  --color-background: #0c0c0c;
   --color-foreground: #fafafa;
 
   --color-card: #0f0f0f;
@@ -14,17 +20,20 @@
   --color-muted: #171717;
   --color-muted-foreground: #a1a1aa;
 
-  /* 3.23:1 against the background — WCAG 1.4.11 wants 3:1 for the borders
-     that identify inputs, cards and pills. #27272a looked right but sat at
-     1.37:1, which meant the edges were effectively invisible.
+  /* 3.10:1 on the page and 3.03:1 on the #0f0f0f bands — WCAG 1.4.11 wants
+     3:1 for the borders that identify inputs, cards and pills. #27272a
+     looked right but sat at 1.37:1, which meant the edges were effectively
+     invisible. (Was 3.23:1 before the background moved to #0c0c0c; every
+     token was re-measured against the new base, and this one — the tightest
+     — still clears, so the background is as light as it can go.)
      NOTE: border token only. Text below 18px needs 4.5:1 — use
-     --color-muted-foreground (7:1) for dim copy, never this. */
+     --color-muted-foreground (7.6:1) for dim copy, never this. */
   --color-border: #5f5f68;
 
   /* Ember/amber accent — ties the palette to the hero crack-shader glow */
   --color-accent: #d97706;
   --color-accent-bright: #f59e0b;
-  --color-accent-foreground: #050505;
+  --color-accent-foreground: #0c0c0c;
 
   --color-destructive: #ef4444;
   --color-ring: #d97706;
@@ -92,7 +101,7 @@
   .skeleton {
     position: relative;
     overflow: hidden;
-    background: #0d0d0d;
+    background: #131313;
   }
   .skeleton::before {
     content: "";
@@ -105,7 +114,7 @@
 
   /* Stand-in for a screenshot that doesn't exist yet. */
   .placeholder-hatch {
-    background-color: #0d0d0d;
+    background-color: #131313;
     background-image: repeating-linear-gradient(
       135deg,
       rgba(250, 250, 250, 0.05) 0 8px,
