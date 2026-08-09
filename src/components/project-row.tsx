@@ -1,10 +1,24 @@
 "use client";
 
-import { useCallback, type FocusEvent, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type FocusEvent,
+  type KeyboardEvent,
+} from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export type ProjectRowLink = { label: string; href: string; accent?: boolean };
+
+/**
+ * Hover has to mean "I stopped here", not "I passed through". Without this
+ * pause, dragging the pointer down to a link inside an open panel trips every
+ * row on the way and the list churns. Long enough to filter a traversal,
+ * short enough that a deliberate hover still feels immediate.
+ */
+const HOVER_INTENT_MS = 110;
 
 export type ProjectRowProps = {
   title: string;
@@ -62,6 +76,14 @@ export function ProjectRow({
     [],
   );
 
+  const intent = useRef<number | null>(null);
+  const cancelIntent = useCallback(() => {
+    if (intent.current === null) return;
+    window.clearTimeout(intent.current);
+    intent.current = null;
+  }, []);
+  useEffect(() => cancelIntent, [cancelIntent]);
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     if (event.target !== event.currentTarget) return;
@@ -82,13 +104,20 @@ export function ProjectRow({
       tabIndex={0}
       aria-expanded={open}
       onMouseEnter={() => {
-        if (!canHover()) return;
-        onOpen(true);
+        if (!canHover() || open) return;
+        cancelIntent();
+        intent.current = window.setTimeout(() => {
+          intent.current = null;
+          onOpen(true);
+        }, HOVER_INTENT_MS);
       }}
+      onMouseLeave={cancelIntent}
       onFocus={() => onOpen(false)}
       onBlur={onBlur}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return;
+        // A click is unambiguous — don't let a pending hover reopen it.
+        cancelIntent();
         if (open) onClose();
         else onOpen(true);
       }}

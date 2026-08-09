@@ -50,14 +50,14 @@
   }
 }
 
-@keyframes stat-enter {
+@keyframes portrait-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: scale(1.04);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
 
@@ -104,11 +104,6 @@
     );
   }
 
-  /* Stats cells fading in when the band swaps to another project. */
-  .stat-enter {
-    animation: stat-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
   /* Sections rising into place the first time they're scrolled to. */
   .reveal-up {
     animation: reveal-up 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -119,12 +114,35 @@
     -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 56%);
     mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 56%);
   }
+
+  /*
+   * The portrait's own background is the same black as the page, so a border
+   * around it framed nothing and announced "photo slot". Dissolving the left
+   * and bottom edges instead lets the lit half of the face come out of the
+   * page — and lets the fractures behind it read across the boundary rather
+   * than stopping dead at a rectangle.
+   */
+  .hero-portrait-mask {
+    -webkit-mask-image:
+      linear-gradient(100deg, transparent 0, #000 42%),
+      linear-gradient(0deg, transparent 0, #000 30%);
+    mask-image:
+      linear-gradient(100deg, transparent 0, #000 42%),
+      linear-gradient(0deg, transparent 0, #000 30%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+
+  /* One slow settle on load — the only element in the hero without a state. */
+  .portrait-enter {
+    animation: portrait-enter 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ember-pulse,
   .skeleton,
-  .stat-enter,
+  .portrait-enter,
   .reveal-up {
     animation: none;
   }

@@ -1,11 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { getProject } from "@/lib/projects";
-import {
-  featuredOrder,
-  projectMeta,
-  resolveText,
-  siteStats,
-} from "@/lib/project-meta";
+import { featuredOrder, projectMeta, resolveText } from "@/lib/project-meta";
 import { WorkShowcase, type ShowcaseRow } from "./work-showcase";
 import type { ProjectRowLink } from "./project-row";
 import type { Locale } from "@/i18n/routing";
@@ -58,11 +53,6 @@ export async function FeaturedWork({ locale }: { locale: Locale }) {
   return (
     <WorkShowcase
       rows={rows}
-      siteStats={siteStats.map((stat) => ({
-        value: resolveText(stat.value, locale),
-        label: stat.label[locale],
-      }))}
-      defaultCaption={t("atAGlance")}
       heading={t("selectedWork")}
       hint={t("workHint")}
     />

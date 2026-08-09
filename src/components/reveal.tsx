@@ -13,9 +13,12 @@ import { cn } from "@/lib/utils";
 export function Reveal({
   children,
   className,
+  delay,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** Milliseconds to hold before rising, for staggering siblings. */
+  delay?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<"static" | "armed" | "revealed">("static");
@@ -47,6 +50,7 @@ export function Reveal({
   return (
     <div
       ref={ref}
+      style={delay ? { animationDelay: `${delay}ms` } : undefined}
       className={cn(
         className,
         state === "armed" && "opacity-0",

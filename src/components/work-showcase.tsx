@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { StatsBand, type Stat } from "./stats-band";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { ProjectRow, type ProjectRowLink } from "./project-row";
 import { Reveal } from "./reveal";
 
@@ -12,7 +11,7 @@ export type ShowcaseRow = {
   statusTone: "live" | "production";
   short: string;
   description: string;
-  metrics: Stat[];
+  metrics: { value: string; label: string }[];
   stack: string[];
   screenshot?: { src: string; width: number; height: number };
   screenshotPlaceholder?: string;
@@ -20,38 +19,20 @@ export type ShowcaseRow = {
   note?: string;
 };
 
-// Where on the screen a row counts as "the one being read".
-const FOCUS_LINE = 0.42;
-// After an automatic change, ignore scroll for this long. Opening a row grows
-// the list, which moves the next row across the focus line, which would open
-// that one — a loop. The cooldown outlives the 450ms expand transition.
-const AUTO_COOLDOWN_MS = 600;
-
 export function WorkShowcase({
   rows,
-  siteStats,
-  defaultCaption,
   heading,
   hint,
 }: {
   rows: ShowcaseRow[];
-  siteStats: Stat[];
-  defaultCaption: string;
   heading: string;
   hint: string;
 }) {
   const [active, setActive] = useState<number | null>(null);
-  // Mirrored into a ref so the scroll listener can compare against the current
-  // value without re-subscribing on every change.
-  const activeRef = useRef<number | null>(null);
-  useEffect(() => {
-    activeRef.current = active;
-  }, [active]);
   const headers = useRef<(HTMLDivElement | null)[]>([]);
   // Viewport top of the row that is opening, captured before React re-renders,
   // so the layout effect can put it back where the pointer left it.
   const anchorTop = useRef<number | null>(null);
-  const suppressUntil = useRef(0);
 
   const open = useCallback((index: number, anchor: boolean) => {
     // Measured here, from the same ref the layout effect reads back, so the
@@ -59,7 +40,6 @@ export function WorkShowcase({
     anchorTop.current = anchor
       ? (headers.current[index]?.getBoundingClientRect().top ?? null)
       : null;
-    suppressUntil.current = Date.now() + AUTO_COOLDOWN_MS;
     setActive(index);
   }, []);
 
@@ -67,9 +47,9 @@ export function WorkShowcase({
     setActive((current) => (current === index ? null : current));
   }, []);
 
-  // B — pin the row the pointer is on. Only for pointer-driven changes:
-  // compensating during a scroll-driven change would fight the user's own
-  // scrolling, so anchorTop stays null in that path.
+  // Pin the row the pointer is on. Moving from an open row to one below it
+  // collapses the first, which would otherwise pull the second up from under
+  // the cursor mid-gesture.
   useLayoutEffect(() => {
     if (active === null || anchorTop.current === null) return;
     const header = headers.current[active];
@@ -78,71 +58,12 @@ export function WorkShowcase({
     anchorTop.current = null;
     if (Math.abs(delta) < 1) return;
     window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
-    suppressUntil.current = Date.now() + AUTO_COOLDOWN_MS;
   }, [active]);
-
-  // A — open whichever row is nearest the focus line while scrolling. Reads
-  // the row headers, which keep their own position when a row expands, so the
-  // decision doesn't depend on the thing it causes.
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (window.matchMedia("(hover: hover)").matches === false) {
-      // Touch: no pointer to fight with, so this is the only opener.
-    }
-
-    const selectNearest = () => {
-      if (Date.now() < suppressUntil.current) return;
-
-      const line = window.innerHeight * FOCUS_LINE;
-      let nearest: number | null = null;
-      let best = Infinity;
-
-      headers.current.forEach((header, index) => {
-        if (!header) return;
-        const rect = header.getBoundingClientRect();
-        if (rect.bottom < 0 || rect.top > window.innerHeight) return;
-        const distance = Math.abs(rect.top + rect.height / 2 - line);
-        if (distance < best) {
-          best = distance;
-          nearest = index;
-        }
-      });
-
-      if (nearest === null || nearest === activeRef.current) return;
-      suppressUntil.current = Date.now() + AUTO_COOLDOWN_MS;
-      anchorTop.current = null;
-      setActive(nearest);
-    };
-
-    let frame = 0;
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        selectNearest();
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  const activeRow = active === null ? null : rows[active];
 
   return (
     <>
-      <StatsBand
-        stats={activeRow ? activeRow.metrics : siteStats}
-        caption={activeRow ? activeRow.title : defaultCaption}
-      />
-
-      {/* No onMouseLeave reset: closing everything when the pointer wanders
-          off fought the scroll-driven opening, and leaving the last row open
-          keeps the band showing what the visitor was just reading. */}
+      {/* No onMouseLeave reset: collapsing the open row when the pointer
+          wanders off jumps the page for no reason the visitor asked for. */}
       <section
         id="work"
         className="mx-auto w-full max-w-5xl px-6 py-8 md:px-11 md:py-9"

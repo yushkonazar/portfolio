@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { TypingPlaceholder } from "./typing-placeholder";
 import { Reveal } from "./reveal";
+import { GitHubIcon, LinkedInIcon, MailIcon } from "./icons";
 
 type Status = "idle" | "submitting" | "success" | "error";
 type Verification = "loading" | "ready" | "failed";
@@ -19,10 +20,27 @@ const FIELD_CLASS =
 // than leaving a dead submit button.
 const VERIFY_TIMEOUT_MS = 6000;
 
+// The address stays in `value` even though it isn't drawn — it's what the
+// button announces to a screen reader and what shows on hover as a title.
 const CONTACTS = [
-  { label: "Email", value: "hello@yushko.dev", href: "mailto:hello@yushko.dev" },
-  { label: "GitHub", value: "github.com/yushkonazar", href: "https://github.com/yushkonazar" },
-  { label: "LinkedIn", value: "linkedin.com/in/nazar-yushko", href: "https://linkedin.com/in/nazar-yushko" },
+  {
+    label: "Email",
+    value: "hello@yushko.dev",
+    href: "mailto:hello@yushko.dev",
+    Icon: MailIcon,
+  },
+  {
+    label: "GitHub",
+    value: "github.com/yushkonazar",
+    href: "https://github.com/yushkonazar",
+    Icon: GitHubIcon,
+  },
+  {
+    label: "LinkedIn",
+    value: "linkedin.com/in/nazar-yushko",
+    href: "https://linkedin.com/in/nazar-yushko",
+    Icon: LinkedInIcon,
+  },
 ];
 
 export function ContactForm() {
@@ -125,22 +143,29 @@ export function ContactForm() {
           </p>
 
           {/* These are the only copies on the page now, so they carry the
-              weight the footer used to share — hence cards, not a text list. */}
-          <div className="mt-5 flex flex-col gap-2">
-            {CONTACTS.map((contact) => (
+              weight the footer used to share. Three equal buttons: the label
+              alone at rest, the mark sliding in beside it on approach. The
+              cells are fixed-width so one button expanding its icon re-centres
+              its own contents instead of nudging its neighbours. */}
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {CONTACTS.map(({ label, value, href, Icon }) => (
               <a
-                key={contact.label}
-                href={contact.href}
-                {...(contact.href.startsWith("http")
+                key={label}
+                href={href}
+                aria-label={`${label} — ${value}`}
+                title={value}
+                {...(href.startsWith("http")
                   ? { target: "_blank", rel: "noreferrer" }
                   : {})}
-                className="group border-border hover:border-accent focus-visible:outline-accent-bright flex items-center justify-between gap-3 rounded-lg border px-3.5 py-2.5 transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="group border-border hover:border-accent focus-visible:outline-accent-bright flex h-11 items-center justify-center rounded-lg border transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                <span className="text-muted-foreground font-mono text-[10px] tracking-[0.14em] uppercase">
-                  {contact.label}
+                <span className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr] motion-reduce:transition-none">
+                  <span className="min-w-0 overflow-hidden">
+                    <Icon className="text-accent-bright mr-2 h-[15px] w-[15px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
+                  </span>
                 </span>
-                <span className="group-hover:text-accent-bright font-mono text-[13px] transition-colors">
-                  {contact.value}
+                <span className="group-hover:text-accent-bright font-mono text-[11.5px] tracking-[0.12em] uppercase transition-colors">
+                  {label}
                 </span>
               </a>
             ))}

@@ -29,17 +29,33 @@ export function Hero({
       <div className="hero-crack-mask pointer-events-none absolute inset-0">
         <SiteBackground scoped region="right" bursts={2} cap={16} />
       </div>
+      {/* The single warm source in this corner. The portrait used to cast its
+          own amber shadow on top of this one and the two stacked into a muddy
+          blob; now this sits where light would fall on the lit half of the
+          face. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 right-16 h-[560px] w-[520px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.2),rgba(217,119,6,0)_62%)]"
+        className="pointer-events-none absolute -top-16 right-24 h-[560px] w-[480px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.22),rgba(217,119,6,0)_62%)]"
       />
 
       <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start gap-8 md:flex-row md:items-end md:gap-10">
         <div className="min-w-0 flex-1">
-          <span className="text-accent-bright flex items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase">
-            <span className="bg-accent-bright ember-pulse h-1.5 w-1.5 rounded-full" />
-            {availability}
-          </span>
+          <div className="flex items-center gap-3">
+            {/* Phones never saw the portrait but still paid to download it.
+                A small round crop costs almost nothing and gives them a face. */}
+            <Image
+              src="/avatar.jpg"
+              alt=""
+              width={104}
+              height={104}
+              sizes="44px"
+              className="h-11 w-11 shrink-0 rounded-full border border-white/15 object-cover object-[45%_28%] md:hidden"
+            />
+            <span className="text-accent-bright flex min-w-0 items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase">
+              <span className="bg-accent-bright ember-pulse h-1.5 w-1.5 rounded-full" />
+              {availability}
+            </span>
+          </div>
 
           <h1 className="mt-4 text-[44px] leading-[0.98] font-extrabold tracking-[-0.035em] md:text-[86px] md:leading-[0.94] md:tracking-[-0.04em]">
             {name.split(" ").map((word) => (
@@ -75,13 +91,17 @@ export function Hero({
           </div>
         </div>
 
+        {/* No `sizes` here meant Next served an 800–1600px file into a 228px
+            box. The frame, the border and the second amber glow are gone: the
+            crop now sits on the eye, and the edges dissolve into the page. */}
         <Image
           src="/avatar.jpg"
           alt={name}
           width={800}
           height={1200}
-          priority
-          className="hidden h-[296px] w-[228px] shrink-0 rounded-2xl border border-white/15 object-cover object-[50%_20%] shadow-[0_24px_70px_rgba(217,119,6,0.2)] md:block"
+          sizes="240px"
+          loading="eager"
+          className="hero-portrait-mask portrait-enter hidden h-[320px] w-[236px] shrink-0 object-cover object-[45%_30%] md:block"
         />
       </div>
     </section>

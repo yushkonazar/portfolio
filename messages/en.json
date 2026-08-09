@@ -4,10 +4,14 @@
     "description": "Fullstack developer portfolio: Next.js, Node.js/Express, and Cloudflare Workers projects — including Svitanok, a personal Telegram assistant in daily production use. Open to remote, hybrid, and freelance work.",
     "keywords": "Yushko Nazar, Nazar Yushko developer, Nazar Yushko portfolio, Fullstack developer Ukraine, Next.js developer Lviv, JavaScript developer portfolio, Node.js Express developer"
   },
-  "Nav": {
-    "work": "Work",
-    "resume": "Resume",
-    "contact": "Contact"
+  "Services": {
+    "caption": "One person, the whole build",
+    "buildTitle": "Web apps, start to finish",
+    "buildBody": "From a first idea to something live, running and looked after.",
+    "improveTitle": "Fixing and improving what exists",
+    "improveBody": "A slow page, a confusing flow, a feature that never quite worked.",
+    "automateTitle": "Small tools and automations",
+    "automateBody": "The kind of thing that gives someone back an hour a day."
   },
   "HomePage": {
     "name": "Yushko Nazar",
@@ -18,9 +22,8 @@
     "ctaResume": "Resume ↗",
     "replyNote": "usually reply\nwithin a day",
     "skipToWork": "Skip to work",
-    "atAGlance": "At a glance",
     "selectedWork": "Selected work",
-    "workHint": "3 projects · opens as you scroll",
+    "workHint": "3 projects · hover or tap to open",
     "caseStudy": "Read the case study"
   },
   "ProjectPage": {

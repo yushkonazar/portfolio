@@ -108,27 +108,3 @@ export const projectMeta: Record<string, ProjectMeta> = {
     ],
   },
 };
-
-/**
- * The band under the hero, in its default state — about the work as a whole,
- * in terms that mean something without a technical background. Per-project
- * numbers live in projectMeta.metrics and replace these when a row opens.
- */
-export const siteStats: Metric[] = [
-  {
-    value: "3",
-    label: { en: "built and still online", uk: "зроблено й досі працюють" },
-  },
-  {
-    value: { en: "Solo", uk: "Соло" },
-    label: { en: "design through deploy", uk: "від задуму до запуску" },
-  },
-  {
-    value: { en: "Daily", uk: "Щодня" },
-    label: { en: "one runs unattended", uk: "один працює без нагляду" },
-  },
-  {
-    value: { en: "< 24h", uk: "< 24 год" },
-    label: { en: "usual reply time", uk: "звичайний час відповіді" },
-  },
-];
