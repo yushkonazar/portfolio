@@ -33,12 +33,22 @@ export function Hero({
       <div className="hero-crack-mask pointer-events-none absolute inset-0">
         <SiteBackground scoped region="right" bursts={2} cap={16} />
       </div>
+      {/* The single warm source in this corner. The portrait used to cast its
+          own amber shadow on top of this one and the two stacked into a muddy
+          blob; now this sits where light would fall on the lit half of the
+          face. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-16 right-24 h-[560px] w-[480px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.22),rgba(217,119,6,0)_62%)]"
+      />
+
       <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start gap-8 px-6 pt-8 pb-10 md:flex-row md:items-end md:gap-10 md:px-11 md:pt-9 md:pb-11">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
-            {/* Phones never see the portrait, so they get a face here instead —
-                cut from the original photo, since the cut-out's transparent
-                background reads badly inside a circle. */}
+            {/* Phones never see the portrait, so they get a face here instead
+                — the same cut-out, cropped square around the head and
+                flattened onto the page colour, since stray transparent pixels
+                would punch holes in a rounded-full disc. */}
             <Image
               src="/avatar-sm.webp"
               alt=""
@@ -87,22 +97,21 @@ export function Hero({
           </div>
         </div>
 
-        {/* Nothing sits behind this on purpose. The page background is tuned
-            to the photo's own dark tone (see --color-background), so the
-            silhouette dissolves into it — and any light placed behind a
-            cut-out stops dead at the opaque edge, which draws the outline
-            back in. That's what the amber layer here used to do.
+        {/* A cut-out, so there is no frame to blend and nothing for the
+            fractures to show through: the outer ring of solid pixels sits at a
+            median luma of 15 against a #050505 page, and the opaque silhouette
+            hides the canvas behind it.
 
             `priority`, not lazy: a real PageSpeed run on the previous design
             named this element the desktop LCP candidate, and lazy-loading the
             LCP image is exactly the mistake that diagnostic exists to catch.
-            It cost 131KB as the full avatar.jpg — at 29.5KB it's cheap enough
-            that eager-loading it everywhere (including the mobile HTML that
-            never renders it) is the right trade. */}
+            It cost 131KB when the file was the full avatar.jpg — at 35KB it's
+            cheap enough that eager-loading it everywhere (including the mobile
+            HTML that never renders it) is the right trade. */}
         <Image
           src="/portrait.webp"
           alt={name}
-          width={297}
+          width={384}
           height={512}
           priority
           className="portrait-enter hidden h-[380px] w-auto shrink-0 md:block"

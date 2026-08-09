@@ -21,9 +21,7 @@ export async function Services() {
   ];
 
   return (
-    // Three steps above the page background, the same separation this band
-    // had before the base moved from #050505 to #0b0b0b.
-    <section className="border-border/40 border-y bg-[#0e0e0e]">
+    <section className="border-border/40 border-y bg-[#080808]">
       <div className="mx-auto w-full max-w-5xl px-6 pt-3 md:px-11">
         <h2 className="text-muted-foreground m-0 font-mono text-[10px] font-normal tracking-[0.16em] uppercase">
           {t("caption")}
