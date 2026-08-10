@@ -111,21 +111,55 @@ export function Hero({
             `priority`, not lazy: a real PageSpeed run named this element the
             desktop LCP candidate, and lazy-loading the LCP image is exactly
             the mistake that diagnostic exists to catch. */}
-        <div className="relative hidden shrink-0 md:block">
-          <Image
-            src="/portrait.webp"
-            alt={name}
-            width={640}
-            height={960}
-            priority
-            className="portrait-enter h-[380px] w-auto rounded-lg border border-white/[0.12] shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
-          />
-          {/* Light catching the near edge of the print, so the frame doesn't
-              sit flat on the texture behind it. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-lg bg-[linear-gradient(150deg,rgba(245,158,11,0.10),rgba(245,158,11,0)_42%)]"
-          />
+        <div className="portrait-enter relative hidden shrink-0 md:block">
+          {/* Cast onto the texture rather than floating over it: a wide, very
+              soft shadow is what puts the card on a surface instead of on a
+              backdrop. */}
+          <div className="relative overflow-hidden rounded-xl shadow-[0_26px_70px_-12px_rgba(0,0,0,0.85)]">
+            <Image
+              src="/portrait.webp"
+              alt={name}
+              width={640}
+              height={960}
+              priority
+              className="portrait-drift block h-[380px] w-auto"
+            />
+
+            {/* Sinks the photograph's own edges so it reads as printed into
+                the card rather than pasted on top of it. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 shadow-[inset_0_0_70px_rgba(0,0,0,0.6)]"
+            />
+
+            {/* The amber in the hero comes from the upper left; this is what
+                that light would do to a glossy surface facing it. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(245,158,11,0.13),rgba(245,158,11,0)_38%)]"
+            />
+
+            {/* The sheen. Kept to white at 7% — the subject is lit from one
+                side and mostly in shadow, so anything stronger stops looking
+                like light on skin and starts looking like a swipe effect. */}
+            <div
+              aria-hidden
+              className="portrait-sheen pointer-events-none absolute -inset-x-1/4 top-0 h-1/2 bg-[linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0.07)_45%,rgba(255,255,255,0))]"
+            />
+
+            {/* Hairline last, so neither the vignette nor the sheen paints
+                over it and softens the card's edge. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-xl border border-white/[0.14]"
+            />
+            {/* One lit edge along the top, the way a physical print catches a
+                room light — a uniform border reads as a UI box. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.32),rgba(255,255,255,0))]"
+            />
+          </div>
         </div>
       </div>
     </section>
