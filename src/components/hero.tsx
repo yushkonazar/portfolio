@@ -33,15 +33,14 @@ export function Hero({
       <div className="hero-crack-mask pointer-events-none absolute inset-0">
         <SiteBackground scoped region="right" bursts={2} cap={16} />
       </div>
-      {/* The single warm source in this corner. The portrait used to cast its
-          own amber shadow on top of this one and the two stacked into a muddy
-          blob; now this sits where light would fall on the lit half of the
-          face. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-16 right-24 h-[560px] w-[480px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.22),rgba(217,119,6,0)_62%)]"
-      />
+      {/* No warm blob behind the portrait any more. A radial sitting where an
+          opaque object stands does not light it — it silhouettes it, which is
+          why the card read as a sticker with a lamp behind it. The same thing
+          happened to the cut-out earlier for the same reason.
 
+          The warmth is still here, and now every bit of it has a source: the
+          traces, the card's own lit corner, the availability dot and the
+          primary button. */}
       <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start gap-8 px-6 pt-8 pb-10 md:flex-row md:items-end md:gap-10 md:px-11 md:pt-9 md:pb-11">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
