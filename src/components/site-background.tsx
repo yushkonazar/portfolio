@@ -29,8 +29,9 @@ type Phase = "growing" | "holding" | "fading";
 type Fissure = {
   points: Point[];
   angle: number;
-  kinkTarget: number;
-  stepsToKink: number;
+  /** Indices into `points` where the trace took a corner — drawn as junctions. */
+  corners: number[];
+  stepsToTurn: number;
   netTurn: number;
   grown: number;
   target: number;
@@ -50,22 +51,33 @@ type Flash = { x: number; y: number; elapsed: number };
 
 const STEP = 6; // px between recorded vertices
 
-// A crack advances in short straight-ish runs that meet at sharp angles,
-// not a smoothly curving line — re-rolling a "kink" target every few steps
-// and snapping toward it is what produces that, versus jitter applied every
-// single step which just reads as a wobbly curve.
-const KINK_MIN_STEPS = 4;
-const KINK_MAX_STEPS = 8;
-const KINK_STRENGTH = 0.55; // rad, ~31° — the sharp-angle character
-// Snapping toward each new kink over several steps instead of ~1 reads as a
-// smoother turn without smoothing away the sharp-angle character itself —
-// the *joint* eases in, the target angle is still a hard kink.
-const KINK_SNAP = 0.4;
+/**
+ * Routing, not fracture. A trace holds one heading for a long run and then
+ * takes a corner of exactly 45° or 90° — never an arbitrary angle, never a
+ * gradual bend. Those two rules are the whole difference between something
+ * that reads as a crack in a surface and something that reads as a signal
+ * path on a board, and they are why the earlier easing constant is gone: an
+ * eased joint is precisely what a routed line does not have.
+ */
+const LATTICE = Math.PI / 4;
+const TURN_CHOICES = [LATTICE, -LATTICE, LATTICE * 2, -LATTICE * 2];
+/** Diagonals over right angles — a board of pure 90° corners looks like a maze. */
+const TURN_45_PREFERENCE = 0.55;
+/** Chance of ignoring the field and taking an arbitrary allowed corner, so the
+ *  layout doesn't read as everything combing one way. */
+const TURN_NOISE = 0.22;
+
+// Long runs between corners. Short ones would read as a zigzag; a trace's
+// character comes from committing to a direction.
+const RUN_MIN_STEPS = 7;
+const RUN_MAX_STEPS = 20;
 
 const FIELD_SCALE = 0.0011; // spatial frequency of the long-range bias
 const FIELD_DRIFT = 0.02;
-const FIELD_WEIGHT = 0.35; // how much the field biases the kink choice
-const MAX_NET_TURN = 1.05; // rad — bounds total bend, so it can never coil
+// Bounds total bend so a trace can route around but never spiral. Enforced by
+// discarding corner choices that would exceed it, rather than by damping the
+// turn — damping would put the line back off the lattice.
+const MAX_NET_TURN = Math.PI;
 
 const POINTER_RADIUS = 260;
 const POINTER_WEIGHT = 0.6; // how much the pointer biases the kink choice
@@ -80,8 +92,8 @@ const CELL = 12; // spatial hash cell size
 // side branches should keep coming off the main trace for its entire run,
 // not just near the burst point.
 const BRANCH_CHANCE = 0.095;
-const BRANCH_MIN_ANGLE = 0.3; // ~17°
-const BRANCH_MAX_ANGLE = 0.85; // ~49° — wide forks, close to the reference
+/** Forks leave on the lattice too, or the branch gives the grid away. */
+const BRANCH_TURNS = [LATTICE, LATTICE * 2];
 const BRANCH_GRACE = 6;
 const MAX_DEPTH = 2;
 // Chance decides *where* a fissure forks; the budget decides *how many*
@@ -193,9 +205,11 @@ function createFissure(
 ): Fissure {
   return {
     points: [origin],
-    angle,
-    kinkTarget: angle,
-    stepsToKink: Math.floor(randomBetween(KINK_MIN_STEPS, KINK_MAX_STEPS)),
+    // Snapped on the way in, so every arm starts on the lattice no matter
+    // which spawn path produced it — bursts, majors and forks alike.
+    angle: Math.round(angle / LATTICE) * LATTICE,
+    corners: [],
+    stepsToTurn: Math.floor(randomBetween(RUN_MIN_STEPS, RUN_MAX_STEPS)),
     netTurn: 0,
     grown: 0,
     target,
@@ -423,13 +437,17 @@ export function SiteBackground({
     }
 
     /**
-     * Pick the next kink target: a sharp offset from the current heading,
-     * with a weak long-range bias from the stress field and a pointer
-     * concentration nearby. The pointer nudges *which side* the next kink
-     * leans toward — it never attracts the tip's position, which is what
-     * would make a trace orbit it and coil.
+     * Choose the corner to take. The field and the pointer still say which
+     * heading is *preferred* — that is what gives the whole screen a shared
+     * grain — but they can no longer bend the line to an arbitrary angle.
+     * Instead the preference only decides which of the four legal corners
+     * gets taken, so every segment stays on the lattice.
+     *
+     * The pointer biases which side the corner leans toward, never the tip's
+     * position: attracting the position is what would make a trace orbit the
+     * cursor and coil.
      */
-    function rollKink(fissure: Fissure, tip: Point) {
+    function chooseTurn(fissure: Fissure, tip: Point) {
       let bias = fieldAngle(tip.x, tip.y, elapsedSeconds);
       bias = alignToLine(fissure.angle, bias);
 
@@ -442,26 +460,44 @@ export function SiteBackground({
         bias += angleDelta(bias, alignToLine(bias, radial)) * weight;
       }
 
-      const jag = randomBetween(-KINK_STRENGTH, KINK_STRENGTH);
-      const towardBias = angleDelta(fissure.angle, bias) * FIELD_WEIGHT;
-      fissure.kinkTarget = fissure.angle + towardBias + jag;
-      fissure.stepsToKink = Math.floor(
-        randomBetween(KINK_MIN_STEPS, KINK_MAX_STEPS),
+      const legal = TURN_CHOICES.filter(
+        (turn) => Math.abs(fissure.netTurn + turn) <= MAX_NET_TURN,
       );
+      if (legal.length === 0) return 0;
+
+      if (Math.random() < TURN_NOISE) {
+        return legal[Math.floor(Math.random() * legal.length)];
+      }
+
+      let best = legal[0];
+      let bestScore = Infinity;
+      for (const turn of legal) {
+        // Distance from the preferred heading, discounted for diagonals so
+        // they win ties and the layout doesn't end up all right angles.
+        const off = Math.abs(angleDelta(fissure.angle + turn, bias));
+        const score =
+          off - (Math.abs(turn) < LATTICE * 1.5 ? TURN_45_PREFERENCE : 0);
+        if (score < bestScore) {
+          bestScore = score;
+          best = turn;
+        }
+      }
+      return best;
     }
 
     function step(fissure: Fissure, tip: Point) {
-      if (fissure.stepsToKink <= 0) rollKink(fissure, tip);
-      fissure.stepsToKink--;
+      fissure.stepsToTurn--;
+      if (fissure.stepsToTurn > 0) return;
 
-      let turn = angleDelta(fissure.angle, fissure.kinkTarget) * KINK_SNAP;
-
-      const projected = fissure.netTurn + turn;
-      if (Math.abs(projected) > MAX_NET_TURN) {
-        turn = Math.sign(projected) * MAX_NET_TURN - fissure.netTurn;
-      }
+      // The corner happens in one step, not eased across several. This is the
+      // line that decides whether the result reads as routed or as cracked.
+      const turn = chooseTurn(fissure, tip);
       fissure.netTurn += turn;
       fissure.angle += turn;
+      fissure.stepsToTurn = Math.floor(
+        randomBetween(RUN_MIN_STEPS, RUN_MAX_STEPS),
+      );
+      if (turn !== 0) fissure.corners.push(fissure.points.length);
     }
 
     function advance(fissure: Fissure, index: number, deltaMs: number) {
@@ -522,8 +558,10 @@ export function SiteBackground({
         if (canBranch) {
           fissure.branchBudget--;
           const spread =
-            randomBetween(BRANCH_MIN_ANGLE, BRANCH_MAX_ANGLE) *
+            BRANCH_TURNS[Math.floor(Math.random() * BRANCH_TURNS.length)] *
             (Math.random() < 0.5 ? 1 : -1);
+          // Where a fork leaves the parent is a junction on the parent too.
+          fissure.corners.push(fissure.points.length - 1);
           addArm(
             { ...next },
             fissure.angle + spread,
@@ -576,6 +614,23 @@ export function SiteBackground({
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    /**
+     * A pad at a corner. Small, and deliberately drawn dark-cored with a lit
+     * rim rather than as a solid dot: a filled blob at every turn would add up
+     * to far more bright area than the contrast budget allows, and it would
+     * read as beads on a string instead of hardware.
+     */
+    function junctionAt(x: number, y: number, scale: number, alpha: number) {
+      const r = 2.3 * scale;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(20, 14, 10, ${0.9 * alpha})`;
+      ctx.fill();
+      ctx.lineWidth = 1.1 * scale;
+      ctx.strokeStyle = `rgba(${br}, ${bg}, ${bb}, ${0.5 * alpha})`;
+      ctx.stroke();
     }
 
     // Width by generation: the main line reads as the thicker trace, each
@@ -641,6 +696,13 @@ export function SiteBackground({
             alpha,
           );
         }
+      }
+
+      // Junctions last, so a pad always sits on top of the trace it belongs to
+      // rather than being half-covered by the next segment's stroke.
+      for (const index of fissure.corners) {
+        const point = points[index];
+        if (point) junctionAt(point.x, point.y, baseScale, alpha);
       }
 
       if (fissure.phase === "growing") {

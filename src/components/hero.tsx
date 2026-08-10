@@ -97,29 +97,36 @@ export function Hero({
           </div>
         </div>
 
-        {/* A cut-out, so there is no frame to blend and nothing for the
-            fractures to show through: the ring of solid pixels that meets the
-            page has a median luma of 12, and the opaque silhouette hides the
-            canvas behind it.
+        {/* Framed, not cut out. The cut-out only worked while the page was a
+            flat near-black it could dissolve into; over a textured surface a
+            silhouette reads as a sticker no matter how its edge is tuned. A
+            stated edge is the honest answer where a hidden one would be a
+            losing fight — and since the photo's own background is already
+            black, the frame can stay a hairline instead of becoming a mount.
 
-            width/height must be this file's real 297x512. With `w-auto` the
-            browser sizes from the attribute ratio, so a stale value here
-            stretches the photo rather than just reserving the wrong box.
+            width/height are the file's real 640x960. With `w-auto` the browser
+            sizes from the attribute ratio, so a stale value here stretches the
+            photo rather than merely reserving the wrong box.
 
-            `priority`, not lazy: a real PageSpeed run on the previous design
-            named this element the desktop LCP candidate, and lazy-loading the
-            LCP image is exactly the mistake that diagnostic exists to catch.
-            It cost 131KB when the file was the full avatar.jpg — at 30KB it's
-            cheap enough that eager-loading it everywhere (including the mobile
-            HTML that never renders it) is the right trade. */}
-        <Image
-          src="/sticker.webp"
-          alt={name}
-          width={297}
-          height={512}
-          priority
-          className="portrait-enter hidden h-[380px] w-auto shrink-0 md:block"
-        />
+            `priority`, not lazy: a real PageSpeed run named this element the
+            desktop LCP candidate, and lazy-loading the LCP image is exactly
+            the mistake that diagnostic exists to catch. */}
+        <div className="relative hidden shrink-0 md:block">
+          <Image
+            src="/portrait.webp"
+            alt={name}
+            width={640}
+            height={960}
+            priority
+            className="portrait-enter h-[380px] w-auto rounded-lg border border-white/[0.12] shadow-[0_18px_50px_rgba(0,0,0,0.55)]"
+          />
+          {/* Light catching the near edge of the print, so the frame doesn't
+              sit flat on the texture behind it. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-lg bg-[linear-gradient(150deg,rgba(245,158,11,0.10),rgba(245,158,11,0)_42%)]"
+          />
+        </div>
       </div>
     </section>
   );

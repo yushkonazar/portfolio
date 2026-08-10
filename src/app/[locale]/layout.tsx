@@ -5,7 +5,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { manrope } from "../fonts";
-import { PageFrame } from "@/components/page-frame";
+import { PageTexture } from "@/components/page-texture";
 import "../globals.css";
 
 const SITE_URL = "https://yushko.dev";
@@ -72,9 +72,9 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={manrope.variable}>
       <body>
-        {/* Before the content div so it lands under z-10, and under the
-            fracture canvas too — page colour, frame, cracks, content. */}
-        <PageFrame />
+        {/* Before the content div so it lands under z-10, and under the trace
+            canvas too — page colour, surface, traces, content. */}
+        <PageTexture />
         <NextIntlClientProvider>
           <div className="relative z-10">{children}</div>
         </NextIntlClientProvider>
