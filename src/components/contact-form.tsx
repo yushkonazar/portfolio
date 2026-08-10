@@ -163,7 +163,10 @@ export function ContactForm() {
     // section it put this column a gutter left of the work list above it.
     <section
       id="contact"
-      className="relative overflow-hidden border-t border-white/[0.09] bg-[#080808]"
+      // Translucent for the same reason as the services band: it composites to
+      // the old #080808 over the page colour, but without blacking out the
+      // fixed frame behind it.
+      className="relative overflow-hidden border-t border-white/[0.09] bg-white/[0.012]"
     >
       <div
         aria-hidden

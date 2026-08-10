@@ -21,7 +21,11 @@ export async function Services() {
   ];
 
   return (
-    <section className="border-border/40 border-y bg-[#080808]">
+    // Translucent rather than the #080808 it used to be. Over the page colour
+    // it composites to the same tone, but an opaque band would black out the
+    // fixed frame behind it and make the vignette blink on and off as the
+    // page scrolls past this section.
+    <section className="border-border/40 border-y bg-white/[0.012]">
       <div className="mx-auto w-full max-w-5xl px-6 pt-3 md:px-11">
         <h2 className="text-muted-foreground m-0 font-mono text-[10px] font-normal tracking-[0.16em] uppercase">
           {t("caption")}

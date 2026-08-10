@@ -46,9 +46,9 @@ export function Hero({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
             {/* Phones never see the portrait, so they get a face here instead
-                — the same cut-out, cropped square around the head and
-                flattened onto the page colour, since stray transparent pixels
-                would punch holes in a rounded-full disc. */}
+                — cropped from the photo the cut-out was taken from, so the two
+                viewports show the same shot. Not the cut-out itself: its
+                transparent margin would punch holes in a rounded-full disc. */}
             <Image
               src="/avatar-sm.webp"
               alt=""
@@ -98,20 +98,24 @@ export function Hero({
         </div>
 
         {/* A cut-out, so there is no frame to blend and nothing for the
-            fractures to show through: the outer ring of solid pixels sits at a
-            median luma of 15 against a #050505 page, and the opaque silhouette
-            hides the canvas behind it.
+            fractures to show through: the ring of solid pixels that meets the
+            page has a median luma of 12, and the opaque silhouette hides the
+            canvas behind it.
+
+            width/height must be this file's real 297x512. With `w-auto` the
+            browser sizes from the attribute ratio, so a stale value here
+            stretches the photo rather than just reserving the wrong box.
 
             `priority`, not lazy: a real PageSpeed run on the previous design
             named this element the desktop LCP candidate, and lazy-loading the
             LCP image is exactly the mistake that diagnostic exists to catch.
-            It cost 131KB when the file was the full avatar.jpg — at 35KB it's
+            It cost 131KB when the file was the full avatar.jpg — at 30KB it's
             cheap enough that eager-loading it everywhere (including the mobile
             HTML that never renders it) is the right trade. */}
         <Image
-          src="/portrait.webp"
+          src="/sticker.webp"
           alt={name}
-          width={384}
+          width={297}
           height={512}
           priority
           className="portrait-enter hidden h-[380px] w-auto shrink-0 md:block"
