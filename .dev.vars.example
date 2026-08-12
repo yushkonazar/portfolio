@@ -5,6 +5,9 @@
 
 # Cloudflare Turnstile secret key — verifies the widget token server-side
 # Dashboard → Turnstile → your widget
+# For local development use Cloudflare's test secret
+# 1x0000000000000000000000000000000AA, which accepts tokens from the
+# always-pass test site key in .env.example. Both halves have to be test keys.
 TURNSTILE_SECRET_KEY=
 
 # Resend API key — sends the contact form email

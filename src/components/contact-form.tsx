@@ -12,24 +12,65 @@ type Status = "idle" | "submitting" | "success" | "error";
 type Verification = "loading" | "ready" | "failed";
 type FieldErrors = { name?: string; email?: string; message?: string };
 
+/**
+ * Only the corner of the Turnstile API this form uses. Explicit render is what
+ * makes the states below trustworthy: the auto-rendering `cf-turnstile` class
+ * gives the page nothing to read except the DOM, and a widget that has drawn
+ * its *own* error inside the iframe (unlisted hostname, network trouble) looks
+ * exactly like a working one from out here. The callbacks say which it is.
+ */
+type TurnstileApi = {
+  render: (
+    element: HTMLElement,
+    options: {
+      sitekey: string;
+      theme?: "light" | "dark" | "auto";
+      callback: (token: string) => void;
+      "error-callback": () => void;
+      "expired-callback": () => void;
+    },
+  ) => string | undefined;
+  reset: (widgetId: string) => void;
+  remove: (widgetId: string) => void;
+};
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+    /** Named in the script URL's `onload`, so it has to live on window. */
+    onTurnstileReady?: () => void;
+  }
+}
+
+const TURNSTILE_SRC =
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileReady";
+
+// Inlined at build time, so reading it once out here is the same value the
+// effect would read on every render.
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
 // placeholder:text-white/25 measured at ~2.2:1 against the field background —
 // well under the 4.5:1 WCAG AA floor. /50 lands at ~5.3:1.
 const FIELD_CLASS =
   "border-border focus:border-accent focus:shadow-[0_0_0_3px_rgba(217,119,6,0.22)] rounded-lg border bg-white/[0.02] px-3.5 py-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-white/50";
 
-// Only a deadline for giving up, not the moment of truth: success is detected
-// the instant the widget draws its iframe. Six seconds used to be both, which
-// declared failure on any connection slow enough to still be fetching the
-// script — a throttled phone reached it easily.
-const VERIFY_DEADLINE_MS = 15000;
+/** How long the "Copied" confirmation stays up. */
+const COPIED_MS = 1800;
+
+const EMAIL_ADDRESS = "hello@yushko.dev";
 
 // The address stays in `value` even though it isn't drawn — it's what the
 // button announces to a screen reader and what shows on hover as a title.
+//
+// Email copies instead of opening a mail client. Plenty of people read their
+// mail somewhere the OS handler doesn't point at, and for them a mailto: is a
+// dead end where the address itself would have been useful.
 const CONTACTS = [
   {
     label: "Email",
-    value: "hello@yushko.dev",
-    href: "mailto:hello@yushko.dev",
+    value: EMAIL_ADDRESS,
+    href: `mailto:${EMAIL_ADDRESS}`,
+    copies: true,
     Icon: MailIcon,
   },
   {
@@ -50,49 +91,90 @@ export function ContactForm() {
   const t = useTranslations("ContactForm");
   const [status, setStatus] = useState<Status>("idle");
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [verification, setVerification] = useState<Verification>("loading");
+  // Starting in the fallback when there is no key at all: the widget could
+  // never issue a token, so a submit button here would be a guaranteed dead
+  // end, and there is nothing to wait for that would change that.
+  const [verification, setVerification] = useState<Verification>(
+    SITE_KEY ? "loading" : "failed",
+  );
+  // Held separately from `verification` because the two expire independently:
+  // a widget stays rendered and healthy long after the token it issued goes
+  // stale, and only the token is what the server will accept.
+  const [token, setToken] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [messageValue, setMessageValue] = useState("");
   const [messageFocused, setMessageFocused] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<number | null>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const host = turnstileRef.current;
-    if (!host) return;
+    if (!host || !SITE_KEY) return;
 
-    let settled = false;
-    const settle = (state: Verification) => {
-      if (settled) return;
-      settled = true;
-      observer.disconnect();
-      window.clearTimeout(deadline);
-      window.clearTimeout(initial);
-      setVerification(state);
+    const render = () => {
+      if (widgetId.current !== null) return;
+      widgetId.current =
+        window.turnstile?.render(host, {
+          sitekey: SITE_KEY,
+          theme: "dark",
+          callback: (issued) => {
+            setToken(issued);
+            setVerification("ready");
+          },
+          "error-callback": () => {
+            setToken(null);
+            setVerification("failed");
+          },
+          "expired-callback": () => setToken(null),
+        }) ?? null;
     };
 
-    // Turnstile renders whenever its script finishes, which is not on any
-    // schedule we control — so watch for the iframe instead of guessing when
-    // to look for it.
-    const observer = new MutationObserver(() => {
-      if (host.querySelector("iframe")) settle("ready");
-    });
-    observer.observe(host, { childList: true, subtree: true });
-
-    // Covers the case where the script was cached and had already rendered
-    // before this effect ran, which the observer would never report.
-    const initial = window.setTimeout(() => {
-      if (host.querySelector("iframe")) settle("ready");
-    }, 0);
-
-    const deadline = window.setTimeout(() => {
-      settle(host.querySelector("iframe") ? "ready" : "failed");
-    }, VERIFY_DEADLINE_MS);
+    window.onTurnstileReady = render;
+    // A remount — Fast Refresh, or a return through the router — arrives after
+    // the script has already run and fired its onload, which will not fire a
+    // second time.
+    if (window.turnstile) render();
 
     return () => {
-      observer.disconnect();
-      window.clearTimeout(deadline);
-      window.clearTimeout(initial);
+      window.onTurnstileReady = undefined;
+      const rendered = widgetId.current;
+      widgetId.current = null;
+      if (rendered !== null) window.turnstile?.remove(rendered);
     };
   }, []);
+
+  // Reset runs from here rather than from the click handler so it lands after
+  // the render that puts the widget back on screen — a display:none widget is
+  // a poor target for it. `attempt` starts at 0, which skips the mount.
+  useEffect(() => {
+    if (attempt === 0) return;
+    const rendered = widgetId.current;
+    if (rendered !== null) window.turnstile?.reset(rendered);
+  }, [attempt]);
+
+  useEffect(
+    () => () => {
+      if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current);
+    },
+    [],
+  );
+
+  async function copyAddress() {
+    try {
+      await navigator.clipboard.writeText(EMAIL_ADDRESS);
+    } catch {
+      // Denied permission, or an insecure origin. The address is already in
+      // the button's title and its accessible name, so there's nothing to
+      // announce and nothing lost.
+      return;
+    }
+    setCopied(true);
+    if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(false), COPIED_MS);
+  }
 
   function validate(formData: FormData): FieldErrors {
     const next: FieldErrors = {};
@@ -127,13 +209,18 @@ export function ContactForm() {
       return;
     }
 
+    // Belt to the disabled button's braces: without a token the server will
+    // reject this anyway, and the visitor would read the rejection as a fault
+    // of their own message.
+    if (!token) return;
+
     setStatus("submitting");
 
     const payload = {
       name: formData.get("name"),
       email: formData.get("email"),
       message: formData.get("message"),
-      turnstileToken: formData.get("cf-turnstile-response"),
+      turnstileToken: token,
     };
 
     try {
@@ -148,9 +235,26 @@ export function ContactForm() {
       setStatus("success");
       form.reset();
       setMessageValue("");
+      // Turnstile tokens are single-use. Dropping it here is what makes the
+      // second send go through a fresh challenge instead of replaying this one.
+      setToken(null);
     } catch {
       setStatus("error");
     }
+  }
+
+  // A second message is a normal thing to want — "forgot to add the link" —
+  // and after a success the widget is hidden and its token spent, so there is
+  // nothing left to submit with until the challenge runs again.
+  function startOver() {
+    setStatus("idle");
+    setErrors({});
+    setToken(null);
+    setVerification("loading");
+    setAttempt((count) => count + 1);
+    // The button that called this unmounts with the success panel, so focus
+    // has to be placed deliberately or it drops to the document.
+    formRef.current?.querySelector<HTMLElement>("#name")?.focus();
   }
 
   // Memoised because a fresh array each render would be a new dependency for
@@ -168,10 +272,11 @@ export function ContactForm() {
       // fixed frame behind it.
       className="relative overflow-hidden border-t border-white/[0.09] bg-white/[0.012]"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-[-230px] left-[38%] h-[420px] w-[520px] bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.18),rgba(217,119,6,0)_62%)]"
-      />
+      {/* The amber ellipse that used to bleed out of the bottom-right of this
+          section is gone. It had no source — nothing in the layout is lit from
+          down there — so it read as a stray glow above the footer rather than as
+          light. The warmth in this section comes from the button and the traces,
+          both of which are actually emitting. */}
       <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10 md:flex-row md:gap-11 md:px-11 md:py-11">
         <Reveal className="md:w-[320px] md:shrink-0">
           <h2 className="m-0 text-[30px] leading-[1.05] font-extrabold tracking-[-0.03em] md:text-[38px]">
@@ -187,38 +292,77 @@ export function ContactForm() {
               cells are fixed-width so one button expanding its icon re-centres
               its own contents instead of nudging its neighbours. */}
           <div className="mt-5 grid grid-cols-3 gap-2">
-            {CONTACTS.map(({ label, value, href, Icon }) => (
-              <a
-                key={label}
-                href={href}
-                aria-label={`${label} — ${value}`}
-                title={value}
-                {...(href.startsWith("http")
-                  ? { target: "_blank", rel: "noreferrer" }
-                  : {})}
-                className="group border-border hover:border-accent focus-visible:outline-accent-bright flex h-11 items-center justify-center rounded-lg border transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                <span className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr] motion-reduce:transition-none">
-                  <span className="min-w-0 overflow-hidden">
-                    <Icon className="text-accent-bright mr-2 h-[15px] w-[15px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
+            {CONTACTS.map(({ label, value, href, copies, Icon }) => {
+              const cellClass =
+                "group border-border hover:border-accent focus-visible:outline-accent-bright flex h-11 w-full cursor-pointer items-center justify-center rounded-lg border transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2";
+              const contents = (
+                <>
+                  <span className="grid grid-cols-[0fr] transition-[grid-template-columns] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr] motion-reduce:transition-none">
+                    <span className="min-w-0 overflow-hidden">
+                      <Icon className="text-accent-bright mr-2 h-[15px] w-[15px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
+                    </span>
+                  </span>
+                  <span className="group-hover:text-accent-bright font-mono text-[11.5px] tracking-[0.12em] uppercase transition-colors">
+                    {label}
+                  </span>
+                </>
+              );
+
+              if (!copies) {
+                return (
+                  <a
+                    key={label}
+                    href={href}
+                    aria-label={`${label} — ${value}`}
+                    title={value}
+                    {...(href.startsWith("http")
+                      ? { target: "_blank", rel: "noreferrer" }
+                      : {})}
+                    className={cellClass}
+                  >
+                    {contents}
+                  </a>
+                );
+              }
+
+              return (
+                // Positioned so the confirmation can sit over this one cell
+                // without the other two shifting to make room for it.
+                <span key={label} className="relative">
+                  <button
+                    type="button"
+                    onClick={copyAddress}
+                    aria-label={`${t("copyEmail")} — ${value}`}
+                    // Still the mailto, for anyone who wants their mail client
+                    // and reaches for the context menu.
+                    title={`${value} · ${href}`}
+                    className={cellClass}
+                  >
+                    {contents}
+                  </button>
+                  <span
+                    role="status"
+                    className={cn(
+                      "text-accent-bright pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 font-mono text-[11px] tracking-[0.08em] transition-opacity duration-200 motion-reduce:transition-none",
+                      copied ? "opacity-100" : "opacity-0",
+                    )}
+                  >
+                    {copied ? t("copied") : ""}
                   </span>
                 </span>
-                <span className="group-hover:text-accent-bright font-mono text-[11.5px] tracking-[0.12em] uppercase transition-colors">
-                  {label}
-                </span>
-              </a>
-            ))}
+              );
+            })}
           </div>
         </Reveal>
 
         <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          src={TURNSTILE_SRC}
           async
           defer
           onError={() => setVerification("failed")}
         />
 
-        <form onSubmit={handleSubmit} noValidate className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2">
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="name" className="text-muted-foreground font-mono text-[11px] tracking-[0.1em] uppercase">
               {t("name")}
@@ -291,15 +435,15 @@ export function ContactForm() {
             )}
           </div>
 
-          {/* Hidden once it has done its job — a large "success" panel from a
-              third party is noise the visitor never asked to read. */}
+          {/* Rendered into by the effect above, not by the `cf-turnstile`
+              class. Hidden once it has done its job — a large "success" panel
+              from a third party is noise the visitor never asked to read. */}
           <div
             ref={turnstileRef}
             className={cn(
-              "cf-turnstile md:col-span-2",
+              "md:col-span-2",
               (status === "success" || verification === "failed") && "hidden",
             )}
-            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
           />
 
           {verification === "failed" && (
@@ -317,11 +461,14 @@ export function ContactForm() {
             </span>
             <button
               type="submit"
-              disabled={status === "submitting" || verification === "failed"}
+              // No token, no send. The widget sits directly above this button
+              // and shows its own progress, so a disabled button while the
+              // challenge runs reads as "not yet" rather than as a dead end.
+              disabled={status === "submitting" || !token}
               className={cn(
                 "bg-accent text-accent-foreground hover:bg-accent-bright focus-visible:outline-accent-bright h-12 cursor-pointer rounded-lg px-7 text-[14.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 md:h-[46px]",
                 status === "submitting" && "cursor-wait opacity-60",
-                verification === "failed" && "cursor-not-allowed opacity-40",
+                !token && status !== "submitting" && "cursor-not-allowed opacity-40",
               )}
             >
               {status === "submitting" ? t("submitting") : t("submit")}
@@ -330,10 +477,19 @@ export function ContactForm() {
 
           <div aria-live="polite" className="md:col-span-2 empty:hidden">
             {status === "success" && (
-              <p role="status" className="flex items-start gap-2.5 rounded-lg border border-emerald-400/40 bg-emerald-500/[0.08] px-3.5 py-3 text-[13.5px] leading-relaxed text-emerald-200">
-                <span aria-hidden className="mt-1.5 h-[7px] w-[7px] shrink-0 rounded-full bg-emerald-400" />
-                {t("success")}
-              </p>
+              <>
+                <p role="status" className="flex items-start gap-2.5 rounded-lg border border-emerald-400/40 bg-emerald-500/[0.08] px-3.5 py-3 text-[13.5px] leading-relaxed text-emerald-200">
+                  <span aria-hidden className="mt-1.5 h-[7px] w-[7px] shrink-0 rounded-full bg-emerald-400" />
+                  {t("success")}
+                </p>
+                <button
+                  type="button"
+                  onClick={startOver}
+                  className="focus-visible:outline-accent-bright mt-3 cursor-pointer border-b border-white/25 pb-px text-[13.5px] font-bold transition-colors hover:border-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  {t("sendAnother")}
+                </button>
+              </>
             )}
             {status === "error" && (
               <p role="alert" className="text-destructive border-destructive/40 bg-destructive/[0.06] rounded-lg border px-3.5 py-3 text-[13.5px] leading-relaxed">
