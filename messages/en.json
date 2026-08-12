@@ -4,6 +4,10 @@
     "description": "Fullstack developer portfolio: Next.js, Node.js/Express, and Cloudflare Workers projects — including Svitanok, a personal Telegram assistant in daily production use. Open to remote, hybrid, and freelance work.",
     "keywords": "Yushko Nazar, Nazar Yushko developer, Nazar Yushko portfolio, Fullstack developer Ukraine, Next.js developer Lviv, JavaScript developer portfolio, Node.js Express developer"
   },
+  "Header": {
+    "home": "Yushko Nazar — home",
+    "github": "GitHub profile"
+  },
   "Services": {
     "caption": "One person, the whole build",
     "buildTitle": "Web apps, start to finish",
@@ -19,12 +23,34 @@
     "availability": "Available — remote, hybrid, freelance",
     "intro": "I build web applications end to end — the interface people use, and the servers and data behind it. Three are online right now; one of them runs in production every day.",
     "ctaContact": "Get in touch",
-    "ctaResume": "Resume ↗",
+    "ctaResume": "Resume",
     "replyNote": "usually reply\nwithin a day",
     "skipToWork": "Skip to work",
     "selectedWork": "Selected work",
     "workHint": "3 projects · hover or tap to open",
-    "caseStudy": "Read the case study"
+    "caseStudy": "Read the case study",
+    "openDemo": "Open the {project} demo",
+    "burstHint": "try clicking",
+    "pulseToday": "Svitanok sent this morning's briefing at {time}",
+    "pulseYesterday": "Svitanok sent yesterday's morning briefing at {time}"
+  },
+  "PortraitCard": {
+    "flip": "Flip the card",
+    "flipBack": "flip back",
+    "qrPlaceholder": "your link",
+    "qrInputLabel": "link to encode",
+    "qrPrint": "print code",
+    "qrReprint": "reprint code",
+    "qrLabel": "QR code",
+    "qrOpen": "Open",
+    "qrDownload": "Download",
+    "qrHintEmpty": "paste a link, press ↵",
+    "qrHintScheme": "http:// or https:// only",
+    "qrHintLength": "too long for this correction level",
+    "qrHintStale": "press ↵ to print this one",
+    "qrHintPrinting": "printing…",
+    "qrHintReady": "ready — hover or tab",
+    "qrPrivacy": "nothing leaves this device"
   },
   "ProjectPage": {
     "stack": "Stack",
@@ -35,7 +61,11 @@
     "liveDemo": "Live demo",
     "sourceCode": "Source code",
     "coldStart": "Hosted on a free tier — the first request takes ~30s to wake the server.",
-    "backToProjects": "All projects"
+    "backToProjects": "All projects",
+    "otherProjects": "Other projects",
+    "previousProject": "Previous",
+    "nextProject": "Next",
+    "caseCta": "Want something like this? Get in touch"
   },
   "ContactForm": {
     "heading": "Let's talk.",
@@ -52,6 +82,9 @@
     "submit": "Send message",
     "submitting": "Sending…",
     "success": "Thanks — your message is on its way. I usually reply within a day.",
+    "sendAnother": "Send another",
+    "copyEmail": "Copy the email address",
+    "copied": "Copied",
     "error": "Something went wrong. Please try again or email hello@yushko.dev directly.",
     "errorRequired": "Tell me who you are so I know how to reply.",
     "errorEmail": "Enter a full email address so I can reply.",

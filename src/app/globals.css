@@ -82,6 +82,97 @@
   }
 }
 
+/* In and out in one shot: the hint has no state to sit in, so its whole life is
+   the animation. */
+@keyframes hint-flash {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── The card's QR ticket ────────────────────────────────────────────────────
+   `steps()` on the reveal is the whole trick: stepped, the code arrives one
+   module-row at a time and reads as a thermal head crossing paper. Eased, it is
+   a wipe. The step count is the module count, so it comes from the component. */
+@keyframes qr-reveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* The paper settling once the head lifts. */
+@keyframes qr-settle {
+  0%,
+  84% {
+    transform: translateY(0);
+  }
+  91% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* The head rides a track the full height of the ticket, with the bright edge at
+   the track's bottom — so -100% puts that edge at the top of the paper and 0
+   puts it at the bottom, whatever the paper measures. No pixel constant to keep
+   in step with the layout. */
+@keyframes qr-head {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  5%,
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+
+/* Reprinting tears the old ticket off along a jagged line — the two halves are
+   clipped copies of the previous code, thrown in opposite directions. */
+@keyframes qr-rip-top {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  14% {
+    transform: translate(-2px, -2px) rotate(-0.9deg);
+  }
+  100% {
+    transform: translate(-32px, -20px) rotate(-5.5deg);
+    opacity: 0;
+  }
+}
+
+@keyframes qr-rip-bottom {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  14% {
+    transform: translate(2px, 2px) rotate(0.9deg);
+  }
+  100% {
+    transform: translate(30px, 32px) rotate(6.5deg);
+    opacity: 0;
+  }
+}
+
 @keyframes reveal-up {
   from {
     opacity: 0;
@@ -89,6 +180,19 @@
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* The intro's rise, and deliberately not `reveal-up`: transform only, opacity
+   never touched. A word at opacity 0 has not been painted, and the headline is
+   an LCP candidate — fading it in from nothing would move the metric the intro
+   is supposed to leave alone. Offset text is still painted text. */
+@keyframes intro-rise {
+  from {
+    transform: translateY(28px);
+  }
+  to {
     transform: translateY(0);
   }
 }
@@ -139,6 +243,48 @@
     animation: reveal-up 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
+  /* The one-time "try clicking" label. */
+  .burst-hint {
+    animation: hint-flash 1500ms ease-in-out both;
+  }
+
+  /* ── First-entry intro ────────────────────────────────────────────────────
+     Every rule here hangs off `[data-intro]`, which an inline script puts on
+     <html> before paint and only on a first visit in the session. Without the
+     attribute the page is exactly what it was, which is also what happens with
+     JS off, under reduced motion, or on the second entry.
+
+     Nothing here hides anything. The server renders the page visible and the
+     intro is added on top of it — no opacity ramps on content, no delayed
+     reveals, because a full-screen preloader is the antipattern this exists to
+     avoid rather than a shape to imitate. What the sequence actually does is
+     stagger where things settle *from*. */
+  /* Slower and further apart than the first pass, which went by before it
+     registered as anything. The whole sequence now runs about 1.9s: trace from
+     120ms, impact at 760ms, words 800ms onward, badge last at 1400ms. */
+  [data-intro] .intro-word {
+    animation: intro-rise 780ms cubic-bezier(0.4, 0.05, 0.2, 1) both;
+    animation-delay: calc(800ms + var(--word, 0) * 150ms);
+  }
+
+  /* The badge is the last thing to catch. A 6px dot is nobody's LCP candidate,
+     so this one can afford to start from nothing. */
+  [data-intro] .ember-pulse {
+    animation-delay: 1400ms;
+  }
+
+  /* Anything at all from the visitor ends it: they came to read the page, not
+     to watch it arrive. Removing the animation drops each element straight into
+     its natural state, which for transform-only rules is the finished one.
+     After the [data-intro] rules, so it wins on source order at equal
+     specificity. */
+  [data-intro-skip] .intro-word {
+    animation: none;
+  }
+  [data-intro-skip] .ember-pulse {
+    animation-delay: 0s;
+  }
+
   /* Keeps the fracture animation off the headline. */
   .hero-crack-mask {
     -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 56%);
@@ -157,6 +303,64 @@
   .portrait-drift {
     animation: portrait-drift 26s ease-in-out infinite alternate;
   }
+
+  /* Tilt and flip. The whole mechanism is three custom properties written by
+     portrait-card.tsx — the card itself owns no state in CSS, which is what
+     keeps the tilt on the compositor and out of React's render path. */
+  .portrait-frame {
+    /* Shallow on purpose. A tighter perspective at this card size exaggerates
+       the near corner until the photograph looks like it's falling forward. */
+    perspective: 800px;
+  }
+
+  .portrait-flipper {
+    transform-style: preserve-3d;
+    /* Tilt and flip compose on one transform, so levelling the tilt is enough
+       to keep the flip on a clean axis — no second transform to fight. */
+    transform: rotateX(var(--tilt-x, 0deg))
+      rotateY(calc(var(--flip, 0deg) + var(--tilt-y, 0deg)));
+    transition: transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* While the pointer is driving it, easing is lag: each frame would start a
+     new 400ms interpolation toward a target the cursor has already left. */
+  .portrait-frame[data-tilting="true"] .portrait-flipper {
+    transition-duration: 0ms;
+  }
+
+  /* After the tilting rule, so it wins while both attributes are set. The flip
+     is a longer, more deliberate move than the tilt's return. */
+  .portrait-frame[data-flipping="true"] .portrait-flipper {
+    transition-duration: 600ms;
+  }
+
+  /* Only ever hinted while something is actually moving — a permanent
+     will-change keeps the layer promoted for the life of the page. */
+  .portrait-frame[data-tilting="true"] .portrait-flipper,
+  .portrait-frame[data-flipping="true"] .portrait-flipper {
+    will-change: transform;
+  }
+
+  .portrait-face {
+    backface-visibility: hidden;
+  }
+
+  .portrait-back {
+    transform: rotateY(180deg);
+  }
+
+  /* Positioned by --glare-x/--glare-y, which the card sets in anti-phase to the
+     tilt. Composites with the sheen above rather than replacing it: the sheen is
+     a travelling band on its own schedule, this is a standing highlight that
+     only moves when the card does. */
+  .portrait-glare {
+    background: radial-gradient(
+      closest-side circle at calc(50% + var(--glare-x, 0%))
+        calc(50% + var(--glare-y, 0%)),
+      rgba(255, 255, 255, 0.11),
+      rgba(255, 255, 255, 0) 72%
+    );
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -165,8 +369,18 @@
   .portrait-enter,
   .portrait-sheen,
   .portrait-drift,
-  .reveal-up {
+  .reveal-up,
+  /* The hint still appears — a label is not motion, and it's the only way the
+     background toy is ever discovered — it just doesn't fade in. */
+  .burst-hint {
     animation: none;
+  }
+
+  /* The flip still happens — it's how the back is reached, and the content
+     behind it shouldn't be unreachable — but it arrives instead of turning.
+     Tilt is refused outright, in the component. */
+  .portrait-flipper {
+    transition: none;
   }
 }
 
