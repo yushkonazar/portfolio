@@ -1,4 +1,7 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
+import { Link } from "@/i18n/navigation";
+import { PortraitCard } from "./portrait-card";
 import { SiteBackground } from "./site-background";
 
 type HeroProps = {
@@ -9,7 +12,6 @@ type HeroProps = {
   ctaContact: string;
   ctaResume: string;
   replyNote: string;
-  resumeHref: string;
 };
 
 export function Hero({
@@ -20,7 +22,6 @@ export function Hero({
   ctaContact,
   ctaResume,
   replyNote,
-  resumeHref,
 }: HeroProps) {
   return (
     // Padding lives on the inner container, not here: every other section on
@@ -31,7 +32,7 @@ export function Hero({
       {/* The fracture animation, confined to the hero and masked away from the
           headline so it never fights the type. */}
       <div className="hero-crack-mask pointer-events-none absolute inset-0">
-        <SiteBackground scoped region="right" bursts={2} cap={16} />
+        <SiteBackground scoped region="right" bursts={2} cap={16} choreo />
       </div>
       {/* No warm blob behind the portrait any more. A radial sitting where an
           opaque object stands does not light it — it silhouettes it, which is
@@ -62,9 +63,21 @@ export function Hero({
             </span>
           </div>
 
-          <h1 className="mt-4 text-[44px] leading-[0.98] font-extrabold tracking-[-0.035em] md:text-[86px] md:leading-[0.94] md:tracking-[-0.04em]">
-            {name.split(" ").map((word) => (
-              <span key={word} className="block">
+          {/* Split into words so the intro can stagger them, which costs the
+              headline its own accessible name — a screen reader would read a
+              list of fragments. The label on the h1 restores the whole thing and
+              the spans step out of the way. */}
+          <h1
+            aria-label={name}
+            className="mt-4 text-[44px] leading-[0.98] font-extrabold tracking-[-0.035em] md:text-[86px] md:leading-[0.94] md:tracking-[-0.04em]"
+          >
+            {name.split(" ").map((word, index) => (
+              <span
+                key={word}
+                aria-hidden
+                className="intro-word block"
+                style={{ "--word": index } as CSSProperties}
+              >
                 {word}
               </span>
             ))}
@@ -84,12 +97,15 @@ export function Hero({
             >
               {ctaContact}
             </a>
-            <a
-              href={resumeHref}
+            {/* The resume is a page on this site, so it navigates like one —
+                the locale comes from the routing config rather than being
+                spliced into the href by hand. */}
+            <Link
+              href="/resume"
               className="border-border hover:border-muted-foreground focus-visible:outline-accent-bright flex h-12 items-center justify-center rounded-lg border px-5 text-[14.5px] font-semibold transition-colors hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-[46px]"
             >
               {ctaResume}
-            </a>
+            </Link>
             <span className="text-muted-foreground hidden font-mono text-[11.5px] leading-[1.5] whitespace-pre-line sm:block">
               {replyNote}
             </span>
@@ -103,63 +119,11 @@ export function Hero({
             losing fight — and since the photo's own background is already
             black, the frame can stay a hairline instead of becoming a mount.
 
-            width/height are the file's real 640x960. With `w-auto` the browser
-            sizes from the attribute ratio, so a stale value here stretches the
-            photo rather than merely reserving the wrong box.
-
-            `priority`, not lazy: a real PageSpeed run named this element the
-            desktop LCP candidate, and lazy-loading the LCP image is exactly
-            the mistake that diagnostic exists to catch. */}
-        <div className="portrait-enter relative hidden shrink-0 md:block">
-          {/* Cast onto the texture rather than floating over it: a wide, very
-              soft shadow is what puts the card on a surface instead of on a
-              backdrop. */}
-          <div className="relative overflow-hidden rounded-xl shadow-[0_26px_70px_-12px_rgba(0,0,0,0.85)]">
-            <Image
-              src="/portrait.webp"
-              alt={name}
-              width={640}
-              height={960}
-              priority
-              className="portrait-drift block h-[380px] w-auto"
-            />
-
-            {/* Sinks the photograph's own edges so it reads as printed into
-                the card rather than pasted on top of it. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 shadow-[inset_0_0_70px_rgba(0,0,0,0.6)]"
-            />
-
-            {/* The amber in the hero comes from the upper left; this is what
-                that light would do to a glossy surface facing it. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(245,158,11,0.13),rgba(245,158,11,0)_38%)]"
-            />
-
-            {/* The sheen. Kept to white at 7% — the subject is lit from one
-                side and mostly in shadow, so anything stronger stops looking
-                like light on skin and starts looking like a swipe effect. */}
-            <div
-              aria-hidden
-              className="portrait-sheen pointer-events-none absolute -inset-x-1/4 top-0 h-1/2 bg-[linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0.07)_45%,rgba(255,255,255,0))]"
-            />
-
-            {/* Hairline last, so neither the vignette nor the sheen paints
-                over it and softens the card's edge. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-xl border border-white/[0.14]"
-            />
-            {/* One lit edge along the top, the way a physical print catches a
-                room light — a uniform border reads as a UI box. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.32),rgba(255,255,255,0))]"
-            />
-          </div>
-        </div>
+            Its own component now, because tilt and flip need state and the rest
+            of the hero is static. Cast onto the texture rather than floating
+            over it: the wide, very soft shadow that puts the card on a surface
+            instead of on a backdrop lives in there too. */}
+        <PortraitCard name={name} />
       </div>
     </section>
   );
