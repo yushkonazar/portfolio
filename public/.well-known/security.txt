@@ -1,0 +1,5 @@
+# https://securitytxt.org — where to report something you found here.
+Contact: mailto:hello@yushko.dev
+Expires: 2027-08-12T00:00:00.000Z
+Preferred-Languages: en, uk
+Canonical: https://yushko.dev/.well-known/security.txt

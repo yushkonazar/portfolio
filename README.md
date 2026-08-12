@@ -2,6 +2,16 @@
 
 Personal developer portfolio built with Next.js, deployed on Cloudflare.
 
+**Live:** [yushko.dev](https://yushko.dev)
+
+## Features
+
+- **Bilingual, English and Ukrainian** — routed by `next-intl`, detected from the browser on a first visit and switchable in the header. Every string, including the case studies and the resume, exists in both.
+- **Statically generated, served from Cloudflare Workers** — every page prerendered through `generateStaticParams` and deployed by `@opennextjs/cloudflare`. No origin server to keep warm.
+- **Content-Security-Policy and security headers** — CSP with the third-party origins named explicitly, HSTS, `frame-ancestors 'none'`, a `Permissions-Policy`, and a `_headers` file covering the static assets the Next server never sees.
+- **A canvas trace field** — hairline traces that burst from a point, route on a 45°/90° lattice, arrest where they meet, then fade. It stops when the tab is hidden, thins out on a touch device, and doesn't run at all under `prefers-reduced-motion`.
+- **Contact form behind Turnstile** — explicit widget render so a failed challenge is a visible fallback rather than a silent dead end, token verified server-side against hostname and remote address, delivered by Resend. Nothing is stored in a database.
+
 ## Stack
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript

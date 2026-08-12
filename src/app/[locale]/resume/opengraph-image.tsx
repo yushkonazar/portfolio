@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
 import { getTranslations } from "next-intl/server";
+import { OG_SIZE, OgFrame, manropeFonts } from "@/lib/og";
 
-export const size = { width: 1200, height: 630 };
+export const size = OG_SIZE;
 export const contentType = "image/png";
 
 export default async function Image({
@@ -12,34 +13,11 @@ export default async function Image({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "ResumePage" });
   const home = await getTranslations({ locale, namespace: "HomePage" });
+  const fonts = await manropeFonts();
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          backgroundColor: "#050505",
-          padding: "96px",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: -140,
-            right: -140,
-            width: 520,
-            height: 520,
-            borderRadius: "50%",
-            background:
-              "radial-gradient(circle, rgba(217,119,6,0.38) 0%, rgba(5,5,5,0) 70%)",
-            display: "flex",
-          }}
-        />
+      <OgFrame>
         <div style={{ fontSize: 28, color: "#f59e0b", display: "flex" }}>
           {t("title")}
         </div>
@@ -64,8 +42,8 @@ export default async function Image({
         >
           {home("role")}
         </div>
-      </div>
+      </OgFrame>
     ),
-    { ...size },
+    { ...size, fonts },
   );
 }

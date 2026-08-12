@@ -4,3 +4,31 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+
+# Below /* on purpose: where two rules set the same header, the later and more
+# specific one wins.
+#
+# `immutable` is safe for these because none of them is ever edited in place —
+# replacing an image means a new filename, which is the deal immutable asks for.
+/texture.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/portrait.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/avatar-sm.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+# Named one by one rather than as /*-screenshot.jpg: a splat in these rules
+# matches at the end of a pattern, so a mid-pattern one would quietly match
+# nothing at all. A new screenshot needs a line here.
+/moviehouse-screenshot.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/modern-blog-screenshot.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+# The CV keeps its filename across revisions, so it gets a day rather than a
+# year — long enough to be cheap, short enough that a correction lands.
+/Nazar-Yushko-CV.pdf
+  Cache-Control: public, max-age=86400

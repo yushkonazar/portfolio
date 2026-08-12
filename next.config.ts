@@ -19,13 +19,31 @@ const BEACON_REPORT = "https://cloudflareinsights.com";
 // source maps). It never uses eval in production, so this stays dev-only.
 const devEval = process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'";
 
+// The Svitanok status endpoint lives on another origin, so the fetch that reads
+// it has to be named in connect-src or CSP refuses it. Resolved here because
+// NEXT_PUBLIC_* values are inlined at build time anyway — the same moment this
+// header is assembled. An unset or unparseable value leaves connect-src as it
+// was, which is exactly the outcome the component is built to survive.
+const SVITANOK_ORIGIN = (() => {
+  const url = process.env.NEXT_PUBLIC_SVITANOK_STATUS_URL;
+  if (!url) return "";
+  try {
+    return ` ${new URL(url).origin}`;
+  } catch {
+    console.warn(
+      `NEXT_PUBLIC_SVITANOK_STATUS_URL is not a valid URL (${url}); leaving it out of connect-src.`,
+    );
+    return "";
+  }
+})();
+
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${devEval} ${TURNSTILE} ${BEACON}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  `connect-src 'self' ${BEACON_REPORT} ${TURNSTILE}`,
+  `connect-src 'self' ${BEACON_REPORT} ${TURNSTILE}${SVITANOK_ORIGIN}`,
   `frame-src ${TURNSTILE}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -42,8 +60,12 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
+    // `interest-cohort` stays for the browsers that still honour it, but FLoC
+    // was replaced by the Topics API — `browsing-topics` is the directive that
+    // actually opts out today.
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    value:
+      "camera=(), microphone=(), geolocation=(), interest-cohort=(), browsing-topics=()",
   },
 ];
 

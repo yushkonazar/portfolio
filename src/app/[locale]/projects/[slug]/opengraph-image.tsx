@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
 import { projects } from "@/lib/projects";
+import { OG_SIZE, OgFrame, manropeFonts } from "@/lib/og";
 import type { Locale } from "@/i18n/routing";
 
-export const size = { width: 1200, height: 630 };
+export const size = OG_SIZE;
 export const contentType = "image/png";
 
 export function generateStaticParams() {
@@ -17,34 +18,11 @@ export default async function Image({
   const { locale, slug } = await params;
   const currentLocale = locale as Locale;
   const project = projects.find((p) => p.slug === slug);
+  const fonts = await manropeFonts();
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          backgroundColor: "#050505",
-          padding: "96px",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: -140,
-            right: -140,
-            width: 520,
-            height: 520,
-            borderRadius: "50%",
-            background:
-              "radial-gradient(circle, rgba(217,119,6,0.38) 0%, rgba(5,5,5,0) 70%)",
-            display: "flex",
-          }}
-        />
+      <OgFrame>
         <div style={{ fontSize: 28, color: "#f59e0b", display: "flex" }}>
           Yushko Nazar
         </div>
@@ -72,8 +50,8 @@ export default async function Image({
             {project.tagline[currentLocale]}
           </div>
         )}
-      </div>
+      </OgFrame>
     ),
-    { ...size },
+    { ...size, fonts },
   );
 }
