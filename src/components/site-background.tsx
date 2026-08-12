@@ -109,6 +109,54 @@ const ARM_MAX = 3;
 const AMBIENT_BURSTS = 3; // concurrent burst clusters, not individual arms
 const HARD_CAP = 34; // total arms across every live cluster
 
+// A phone runs the same per-frame work on a battery, and the field is the one
+// thing on the page that never stops asking for frames. One cluster at a time,
+// and a much lower ceiling on arms.
+const COARSE_BURSTS = 1;
+const COARSE_CAP = 10;
+
+/**
+ * Keep ambient bursts this far in from the top and bottom edges, as a fraction
+ * of height. A burst is a radius around a point, so one spawned against an edge
+ * has half its arms clipped away by `overflow-hidden` — what's left reads as a
+ * flash from nowhere.
+ */
+const AMBIENT_EDGE_MARGIN = 0.15;
+
+// ── First-entry choreography ────────────────────────────────────────────────
+// The one moment this field is scripted rather than random: a single trace
+// arrives from off-frame and something gives way where it lands. Everything
+// after is the usual ambient behaviour.
+
+/**
+ * Where the sequence lands, as a fraction of the canvas. Pushed right of the
+ * original 0.62: the hero canvas is masked transparent below 30% of its width
+ * and only fully opaque past 56%, so a target at 0.62 left the trace barely a
+ * sliver of visible runway before it arrived. From here the approach crosses
+ * real screen.
+ */
+const CHOREO_TARGET = { x: 0.74, y: 0.42 };
+/**
+ * How far above the top edge the trace starts. Its origin is then derived so the
+ * approach is exactly 45°, because `createFissure` snaps every heading onto the
+ * lattice: aimed straight at the target the angle works out near 16°, which
+ * rounds to horizontal, and the trace would run off the top of the frame
+ * instead of into the hero.
+ */
+const CHOREO_ENTRY_MARGIN = 60;
+/** Overshoot past the target, so the trace doesn't stop dead on the burst. */
+const CHOREO_OVERSHOOT = 1.15;
+/**
+ * Timing tuned by watching it rather than by arithmetic: at ×1.5 with the burst
+ * at 400ms the trace had covered a hundred-odd pixels of a masked region by the
+ * time the thing it was supposedly causing had already happened, so there was
+ * nothing to see. Faster trace, later burst, and the two now read as cause and
+ * effect.
+ */
+const CHOREO_SPEED_SCALE = 2.4;
+const CHOREO_MAJOR_MS = 120;
+const CHOREO_BURST_MS = 760;
+
 const FIRST_SPAWN_MS = 500;
 // Shorter still on request — bursts should appear more often — while
 // AMBIENT_BURSTS above still caps how many are ever live at once.
@@ -246,6 +294,12 @@ type SiteBackgroundProps = {
   bursts?: number;
   /** Total live arms across every cluster. Default 34. */
   cap?: number;
+  /**
+   * Allow this instance to run the first-entry sequence. Whether it actually
+   * runs is read from `data-intro` on <html>, because only the inline script
+   * that sets it knows if this is a first visit — the server can't.
+   */
+  choreo?: boolean;
 };
 
 export function SiteBackground({
@@ -253,6 +307,7 @@ export function SiteBackground({
   region,
   bursts = AMBIENT_BURSTS,
   cap = HARD_CAP,
+  choreo = false,
 }: SiteBackgroundProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -264,6 +319,19 @@ export function SiteBackground({
     const context = canvas.getContext("2d");
     if (!context) return;
     const ctx: CanvasRenderingContext2D = context;
+
+    // Read once: a device doesn't change its pointer type mid-session, and the
+    // two numbers below feed every spawn decision in the loop.
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const burstLimit = coarse ? COARSE_BURSTS : bursts;
+    const armCap = coarse ? Math.min(cap, COARSE_CAP) : cap;
+
+    // Reduced motion already returned above, so reaching here with the marker
+    // present means the intro is genuinely playing.
+    const introducing =
+      choreo && document.documentElement.hasAttribute("data-intro");
+    let choreoStage = introducing ? 0 : 2;
+    let choreoElapsed = 0;
 
     const styles = getComputedStyle(document.documentElement);
     const [ar, ag, ab] = hexToRgb(
@@ -354,6 +422,8 @@ export function SiteBackground({
       ctx.lineJoin = "round";
     }
 
+    /** Reports whether the arm was actually taken, so a caller can tell a real
+     * burst from one the cap refused outright. */
     function addArm(
       origin: Point,
       angle: number,
@@ -361,10 +431,14 @@ export function SiteBackground({
       depth: number,
       major = false,
       grace = 0,
+      speedScale = 1,
     ) {
-      if (liveArms >= cap) return;
-      fissures.push(createFissure(origin, angle, target, depth, major, grace));
+      if (liveArms >= armCap) return false;
+      const fissure = createFissure(origin, angle, target, depth, major, grace);
+      fissure.speed *= speedScale;
+      fissures.push(fissure);
       liveArms++;
+      return true;
     }
 
     /** A burst: several arms radiating from one point, the way a fracture
@@ -373,24 +447,40 @@ export function SiteBackground({
       const arms = Math.floor(randomBetween(ARM_MIN, ARM_MAX + 1));
       const base = Math.random() * Math.PI * 2;
       const step = (Math.PI * 2) / arms;
+      let added = 0;
       for (let i = 0; i < arms; i++) {
-        addArm(
-          { x, y },
-          base + i * step + randomBetween(-0.35, 0.35),
-          randomBetween(minLen, maxLen),
-          0,
-          false,
-          BRANCH_GRACE,
-        );
+        if (
+          addArm(
+            { x, y },
+            base + i * step + randomBetween(-0.35, 0.35),
+            randomBetween(minLen, maxLen),
+            0,
+            false,
+            BRANCH_GRACE,
+          )
+        ) {
+          added++;
+        }
       }
-      flashes.push({ x, y, elapsed: 0 });
+      // At the cap every arm is refused, and the flash would be all that's
+      // left: a glow with nothing under it.
+      if (added > 0) flashes.push({ x, y, elapsed: 0 });
+    }
+
+    /** Ambient origins stay clear of the top and bottom edges — see
+     * AMBIENT_EDGE_MARGIN. */
+    function ambientY() {
+      return randomBetween(
+        height * AMBIENT_EDGE_MARGIN,
+        height * (1 - AMBIENT_EDGE_MARGIN),
+      );
     }
 
     function spawnAmbient() {
       if (region === "right") {
         spawnBurstAt(
           randomBetween(width * 0.5, width * 0.98),
-          randomBetween(0, height),
+          ambientY(),
           130,
           340,
         );
@@ -403,9 +493,9 @@ export function SiteBackground({
               Math.random() < 0.5
                 ? randomBetween(0, width * 0.3)
                 : randomBetween(width * 0.7, width),
-            y: randomBetween(0, height),
+            y: ambientY(),
           }
-        : { x: randomBetween(0, width), y: randomBetween(0, height) };
+        : { x: randomBetween(0, width), y: ambientY() };
       spawnBurstAt(origin.x, origin.y, 130, 340);
     }
 
@@ -434,6 +524,53 @@ export function SiteBackground({
 
     function spawnClickBurst(x: number, y: number) {
       spawnBurstAt(x, y, 160, 420);
+    }
+
+    /**
+     * The scripted arrival: one trace, one route, no dice rolled. It still
+     * corners on its own the way every other trace does — the script sets where
+     * it comes in and where it's headed, not each segment.
+     */
+    function spawnChoreoMajor() {
+      const target = {
+        x: width * CHOREO_TARGET.x,
+        y: height * CHOREO_TARGET.y,
+      };
+      // Equal run and rise, so the heading is 45° before snapping and 45° after.
+      const run = target.y + CHOREO_ENTRY_MARGIN;
+      addArm(
+        { x: target.x - run, y: -CHOREO_ENTRY_MARGIN },
+        LATTICE,
+        run * Math.SQRT2 * CHOREO_OVERSHOOT,
+        0,
+        true,
+        0,
+        CHOREO_SPEED_SCALE,
+      );
+    }
+
+    function advanceChoreo(deltaMs: number) {
+      choreoElapsed += deltaMs;
+
+      // The visitor interrupting outranks the rest of the sequence.
+      if (document.documentElement.hasAttribute("data-intro-skip")) {
+        choreoStage = 2;
+        return;
+      }
+
+      if (choreoStage === 0 && choreoElapsed >= CHOREO_MAJOR_MS) {
+        spawnChoreoMajor();
+        choreoStage = 1;
+      }
+      if (choreoStage === 1 && choreoElapsed >= CHOREO_BURST_MS) {
+        spawnBurstAt(
+          width * CHOREO_TARGET.x,
+          height * CHOREO_TARGET.y,
+          170,
+          430,
+        );
+        choreoStage = 2;
+      }
     }
 
     /**
@@ -552,7 +689,7 @@ export function SiteBackground({
         const canBranch =
           fissure.depth < MAX_DEPTH &&
           fissure.branchBudget > 0 &&
-          liveArms < cap &&
+          liveArms < armCap &&
           Math.random() < BRANCH_CHANCE;
 
         if (canBranch) {
@@ -734,15 +871,19 @@ export function SiteBackground({
       lastTime = time;
       elapsedSeconds += deltaMs / 1000;
 
+      // Before the ambient spawner, so the choreographed trace is the first
+      // thing on an empty canvas rather than one of several.
+      if (choreoStage < 2) advanceChoreo(deltaMs);
+
       nextSpawnIn -= deltaMs;
       const activeBursts = Math.ceil(liveArms / ((ARM_MIN + ARM_MAX) / 2));
-      if (nextSpawnIn <= 0 && activeBursts < bursts) {
+      if (nextSpawnIn <= 0 && activeBursts < burstLimit) {
         spawnAmbient();
         nextSpawnIn = randomBetween(SPAWN_MIN_MS, SPAWN_MAX_MS);
       }
 
       nextMajorIn -= deltaMs;
-      if (nextMajorIn <= 0 && liveArms < cap) {
+      if (nextMajorIn <= 0 && liveArms < armCap) {
         spawnMajor();
         nextMajorIn = randomBetween(MAJOR_MIN_MS, MAJOR_MAX_MS);
       }
@@ -793,11 +934,12 @@ export function SiteBackground({
       }
     }
 
-    function onPointerDown(event: PointerEvent) {
+    /** Takes viewport coordinates and bursts there, wherever this canvas sits. */
+    function burstAtViewport(clientX: number, clientY: number) {
       if (scoped) {
         const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
         // A click elsewhere on the page shouldn't spawn a burst inside a
         // hero that happens to be scrolled off-screen.
         if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
@@ -805,10 +947,25 @@ export function SiteBackground({
         pointer.y = y;
         spawnClickBurst(x, y);
       } else {
-        pointer.x = event.clientX;
-        pointer.y = event.clientY;
-        spawnClickBurst(event.clientX, event.clientY);
+        pointer.x = clientX;
+        pointer.y = clientY;
+        spawnClickBurst(clientX, clientY);
       }
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      burstAtViewport(event.clientX, event.clientY);
+    }
+
+    /**
+     * The same burst, reachable without a pointer. The terminal's `sudo hire-me`
+     * scatters a handful of these across the viewport; anything else that wants
+     * to set the field off can do the same without importing this module.
+     */
+    function onRequestedBurst(event: Event) {
+      const detail = (event as CustomEvent<{ x?: number; y?: number }>).detail;
+      if (typeof detail?.x !== "number" || typeof detail?.y !== "number") return;
+      burstAtViewport(detail.x, detail.y);
     }
 
     function onVisibilityChange() {
@@ -846,6 +1003,7 @@ export function SiteBackground({
 
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    window.addEventListener("portfolio:burst", onRequestedBurst);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
@@ -855,9 +1013,10 @@ export function SiteBackground({
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("portfolio:burst", onRequestedBurst);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [scoped, region, bursts, cap]);
+  }, [scoped, region, bursts, cap, choreo]);
 
   return (
     <canvas
