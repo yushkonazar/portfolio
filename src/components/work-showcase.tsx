@@ -6,12 +6,19 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import { ProjectRow, type ProjectRowLink } from "./project-row";
 import { Reveal } from "./reveal";
+import type { ProjectMedia } from "@/lib/projects";
 
-/** How long an open row survives after the pointer leaves the list. */
-const AUTO_CLOSE_MS = 2000;
+/**
+ * How long an open row survives after the pointer leaves the list. The section
+ * is capped at max-w-5xl, so on a wide monitor "moved the cursor aside so it
+ * isn't in the way" and "left the list" are the same gesture — two seconds
+ * closed the panel out from under someone who was still reading it.
+ */
+const AUTO_CLOSE_MS = 5000;
 
 export type ShowcaseRow = {
   slug: string;
@@ -22,7 +29,8 @@ export type ShowcaseRow = {
   description: string;
   metrics: { value: string; label: string }[];
   stack: string[];
-  screenshot?: { src: string; width: number; height: number };
+  media?: ProjectMedia;
+  mediaLink?: { href: string; label: string };
   screenshotPlaceholder?: string;
   links: ProjectRowLink[];
   note?: string;
@@ -32,13 +40,19 @@ export function WorkShowcase({
   rows,
   heading,
   hint,
+  statusLine,
 }: {
   rows: ShowcaseRow[];
   heading: string;
   hint: string;
+  /**
+   * Slot under the heading. Owned by the caller because what belongs there is
+   * about a particular project, and this component only knows about rows.
+   */
+  statusLine?: ReactNode;
 }) {
   const [active, setActive] = useState<number | null>(null);
-  const headers = useRef<(HTMLDivElement | null)[]>([]);
+  const headers = useRef<(HTMLElement | null)[]>([]);
   // Which header to keep still while the list resizes, and where it was before
   // React re-rendered. Set on the way in; the layout effect reads it back and
   // clears it. Null means "let the page move" — that's the scroll-driven case.
@@ -126,6 +140,8 @@ export function WorkShowcase({
             {hint}
           </span>
         </Reveal>
+
+        {statusLine}
 
         <div className="mt-1.5">
           {rows.map((row, index) => (

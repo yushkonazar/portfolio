@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
-import { getProject } from "@/lib/projects";
+import { getProject, getProjectMedia } from "@/lib/projects";
 import { featuredOrder, projectMeta, resolveText } from "@/lib/project-meta";
+import { SvitanokPulse } from "./svitanok-pulse";
 import { WorkShowcase, type ShowcaseRow } from "./work-showcase";
 import type { ProjectRowLink } from "./project-row";
 import type { Locale } from "@/i18n/routing";
@@ -21,9 +22,11 @@ export async function FeaturedWork({ locale }: { locale: Locale }) {
     if (project.links?.repo) {
       links.push({ label: tp("sourceCode"), href: project.links.repo });
     }
+    // Locale-less on purpose: the row renders this one through `Link`, which
+    // prefixes the active locale itself.
     links.push({
       label: t("caseStudy"),
-      href: "/" + locale + "/projects/" + project.slug,
+      href: "/projects/" + project.slug,
       accent: !project.links?.demo,
     });
 
@@ -40,7 +43,13 @@ export async function FeaturedWork({ locale }: { locale: Locale }) {
           label: metric.label[locale],
         })),
         stack: project.stack.slice(0, 4),
-        screenshot: project.screenshot,
+        media: getProjectMedia(project, locale),
+        mediaLink: project.links?.demo
+          ? {
+              href: project.links.demo,
+              label: t("openDemo", { project: project.title }),
+            }
+          : undefined,
         screenshotPlaceholder: meta.screenshotPlaceholder?.[locale],
         links,
         note:
@@ -55,6 +64,7 @@ export async function FeaturedWork({ locale }: { locale: Locale }) {
       rows={rows}
       heading={t("selectedWork")}
       hint={t("workHint")}
+      statusLine={<SvitanokPulse />}
     />
   );
 }

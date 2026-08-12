@@ -3,6 +3,30 @@ import type { Locale } from "@/i18n/routing";
 type LocalizedText = Record<Locale, string>;
 type LocalizedList = Record<Locale, string[]>;
 
+/**
+ * The visual a project shows in its row and on its case page. A still frame
+ * can't carry a product that only makes sense in motion, so `type` decides the
+ * element; `poster` gives a video its first frame, which matters because the
+ * file itself stays off the wire until the row is opened.
+ */
+export type ProjectMedia = {
+  type: "image" | "video";
+  src: string;
+  width: number;
+  height: number;
+  poster?: string;
+};
+
+type Screenshot = { src: string; width: number; height: number };
+
+/**
+ * One asset for both languages, or one per language. A screenshot of a
+ * localized product is the case that needs the second form: a Ukrainian
+ * interface framed on the English page shows the reader a product they can't
+ * read.
+ */
+type MaybeLocalized<T> = T | Record<Locale, T>;
+
 export type Project = {
   slug: string;
   title: string;
@@ -14,7 +38,9 @@ export type Project = {
   highlights: LocalizedList;
   result: LocalizedText;
   note?: LocalizedText;
-  screenshot?: { src: string; width: number; height: number };
+  media?: MaybeLocalized<ProjectMedia>;
+  /** Shorthand for the common case: one static image, nothing else to say. */
+  screenshot?: MaybeLocalized<Screenshot>;
   links?: {
     repo?: string;
     demo?: string;
@@ -63,6 +89,9 @@ export const projects: Project[] = [
       en: "Deployed on Render and running as a public demo. Roadmap items I've deliberately left for later — TV shows, genre pages, watchlists — are tracked openly in the repo rather than left unspoken.",
       uk: "Задеплоєно на Render, працює як публічне демо. Пункти на майбутнє — TV-шоу, сторінки жанрів, списки перегляду — відкрито зазначені в roadmap репозиторію.",
     },
+    // One frame for both languages for now, and it carries Ukrainian copy —
+    // wrong on the English page. When an English capture exists this becomes
+    // `{ en: {...}, uk: {...} }`; nothing else has to change.
     screenshot: {
       src: "/moviehouse-screenshot.jpg",
       width: 1600,
@@ -182,9 +211,36 @@ export const projects: Project[] = [
       en: "Private repository — code available on request.",
       uk: "Приватний репозиторій — код доступний за запитом.",
     },
+    // No `media` yet: a Mini App dashboard is the one thing here that a still
+    // frame undersells, so this waits for a short muted screencast (webm plus
+    // a poster frame) rather than settling for a screenshot. The row shows
+    // projectMeta.svitanok.screenshotPlaceholder until then.
   },
 ];
 
 export function getProject(slug: string) {
   return projects.find((project) => project.slug === slug);
+}
+
+/**
+ * A per-language variant is keyed by locale, a shared asset carries its own
+ * fields, and neither `ProjectMedia` nor `Screenshot` has an `en` key — so the
+ * presence of one tells the two apart. TypeScript can't narrow `in` through a
+ * generic, hence the casts on either side of the check.
+ */
+function pickLocale<T extends object>(
+  value: MaybeLocalized<T>,
+  locale: Locale,
+): T {
+  return "en" in value ? (value as Record<Locale, T>)[locale] : (value as T);
+}
+
+/** One shape for the renderers, whichever field the project filled in. */
+export function getProjectMedia(
+  project: Project,
+  locale: Locale,
+): ProjectMedia | undefined {
+  if (project.media) return pickLocale(project.media, locale);
+  if (!project.screenshot) return undefined;
+  return { type: "image", ...pickLocale(project.screenshot, locale) };
 }
