@@ -26,3 +26,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      # tsc and eslint both pass on code that can't ship: a failing
+      # generateStaticParams, or server-only code pulled into a client
+      # component, only surfaces when the production build runs.
+      - name: Build
+        run: npm run build

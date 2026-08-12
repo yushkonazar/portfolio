@@ -7,7 +7,8 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { SiteBackground } from "@/components/site-background";
 import { Link } from "@/i18n/navigation";
-import { projects, getProject } from "@/lib/projects";
+import { projects, getProject, getProjectMedia } from "@/lib/projects";
+import { featuredOrder } from "@/lib/project-meta";
 import type { Locale } from "@/i18n/routing";
 
 export function generateStaticParams() {
@@ -38,6 +39,7 @@ export async function generateMetadata({
       languages: {
         en: `/en/projects/${slug}`,
         uk: `/uk/projects/${slug}`,
+        "x-default": `/en/projects/${slug}`,
       },
     },
     openGraph: {
@@ -69,6 +71,17 @@ export default async function ProjectPage({
   }
 
   const t = await getTranslations("ProjectPage");
+  const media = getProjectMedia(project, currentLocale);
+
+  // Neighbours in the order the home page ranks them, so moving between cases
+  // walks from the strongest work outward. No wrap-around: the ends of the list
+  // are real information.
+  const position = featuredOrder.indexOf(slug as (typeof featuredOrder)[number]);
+  const previous = position > 0 ? getProject(featuredOrder[position - 1]) : undefined;
+  const next =
+    position >= 0 && position < featuredOrder.length - 1
+      ? getProject(featuredOrder[position + 1])
+      : undefined;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -93,14 +106,33 @@ export default async function ProjectPage({
             {project.tagline[currentLocale]}
           </p>
 
-          {project.screenshot && (
-            <Image
-              src={project.screenshot.src}
-              alt={project.title}
-              width={project.screenshot.width}
-              height={project.screenshot.height}
+          {media?.type === "video" ? (
+            // Controls rather than an autoplaying loop: at this width the clip
+            // is the point of the section, not a thumbnail, and a visitor who
+            // came to read shouldn't have motion started on their behalf.
+            <video
+              src={media.src}
+              poster={media.poster}
+              width={media.width}
+              height={media.height}
+              aria-label={project.title}
+              controls
+              muted
+              loop
+              playsInline
+              preload="none"
               className="border-border/60 mt-8 w-full rounded-xl border"
             />
+          ) : (
+            media && (
+              <Image
+                src={media.src}
+                alt={project.title}
+                width={media.width}
+                height={media.height}
+                className="border-border/60 mt-8 w-full rounded-xl border"
+              />
+            )
           )}
 
           <h2 className="mt-10 text-sm font-medium tracking-wide uppercase">
@@ -199,6 +231,47 @@ export default async function ProjectPage({
               {project.note[currentLocale]}
             </p>
           )}
+
+          {/* The page used to end here, at "Result", with nowhere to go but
+              back. Two neighbours and one invitation. */}
+          <nav
+            aria-label={t("otherProjects")}
+            className="mt-14 flex flex-col gap-3 border-t border-white/[0.12] pt-8 sm:flex-row sm:justify-between"
+          >
+            {previous && (
+              <Link
+                href={`/projects/${previous.slug}`}
+                className="border-border hover:border-accent focus-visible:outline-accent-bright group rounded-lg border px-4 py-3 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <span className="text-muted-foreground block font-mono text-[11px] tracking-[0.1em] uppercase">
+                  ← {t("previousProject")}
+                </span>
+                <span className="group-hover:text-accent-bright mt-1 block font-medium transition-colors">
+                  {previous.title}
+                </span>
+              </Link>
+            )}
+            {next && (
+              <Link
+                href={`/projects/${next.slug}`}
+                className="border-border hover:border-accent focus-visible:outline-accent-bright group rounded-lg border px-4 py-3 text-right transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:ml-auto"
+              >
+                <span className="text-muted-foreground block font-mono text-[11px] tracking-[0.1em] uppercase">
+                  {t("nextProject")} →
+                </span>
+                <span className="group-hover:text-accent-bright mt-1 block font-medium transition-colors">
+                  {next.title}
+                </span>
+              </Link>
+            )}
+          </nav>
+
+          <Link
+            href="/#contact"
+            className="text-accent-bright focus-visible:outline-accent-bright border-accent-bright/35 hover:border-accent-bright mt-10 inline-block border-b pb-px text-[15px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            {t("caseCta")} <span aria-hidden>→</span>
+          </Link>
         </main>
         <Footer />
       </div>

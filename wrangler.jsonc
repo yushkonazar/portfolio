@@ -11,6 +11,12 @@
   "observability": {
     "enabled": true
   },
+  // Not a secret, so it lives here rather than in .dev.vars: the hostname a
+  // Turnstile token must have been solved on for /api/contact to accept it.
+  // A preview deployment on another domain overrides this.
+  "vars": {
+    "CONTACT_ALLOWED_HOSTNAME": "yushko.dev"
+  },
   "routes": [
     { "pattern": "yushko.dev", "custom_domain": true },
     { "pattern": "www.yushko.dev", "custom_domain": true }

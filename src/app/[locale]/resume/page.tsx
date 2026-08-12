@@ -4,7 +4,8 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { SiteBackground } from "@/components/site-background";
 import { Link } from "@/i18n/navigation";
-import { projects } from "@/lib/projects";
+import { projects, getProject } from "@/lib/projects";
+import { featuredOrder } from "@/lib/project-meta";
 import { contactLinks } from "@/lib/contacts";
 import {
   summary,
@@ -39,6 +40,7 @@ export async function generateMetadata({
       languages: {
         en: "/en/resume",
         uk: "/uk/resume",
+        "x-default": "/en/resume",
       },
     },
     openGraph: { title, description, url: `/${locale}/resume`, type: "profile" },
@@ -57,6 +59,17 @@ export default async function ResumePage({
 
   const t = await getTranslations("ResumePage");
   const home = await getTranslations("HomePage");
+
+  // Strongest first, the same order the home page shows. The array order this
+  // used to follow put the flagship last, so a recruiter who only opened the
+  // resume met the weakest project first. Anything absent from featuredOrder
+  // still gets listed — the resume is the full list, not a selection.
+  const orderedProjects = [
+    ...featuredOrder.flatMap((slug) => getProject(slug) ?? []),
+    ...projects.filter(
+      (project) => !(featuredOrder as readonly string[]).includes(project.slug),
+    ),
+  ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -135,7 +148,7 @@ export default async function ResumePage({
               {t("projects")}
             </h2>
             <ul className="mt-3 flex flex-col gap-3">
-              {projects.map((project) => (
+              {orderedProjects.map((project) => (
                 <li key={project.slug}>
                   <Link
                     href={`/projects/${project.slug}`}

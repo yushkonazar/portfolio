@@ -34,6 +34,10 @@ export async function generateMetadata({
       languages: {
         en: "/en",
         uk: "/uk",
+        // Where a search engine should send everyone whose language isn't one
+        // of the two. Without it, a Polish or German visitor gets whichever
+        // alternate the crawler happened to index.
+        "x-default": "/en",
       },
     },
     openGraph: {
@@ -70,7 +74,12 @@ export default async function LocaleLayout({
   const cfBeaconToken = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
 
   return (
-    <html lang={locale} className={manrope.variable}>
+    // The home page's inline intro script marks this element before React
+    // hydrates, which is the whole point of it — so the server HTML and the
+    // client render differ here by design, and React is told not to report it.
+    // Scoped to this element's own attributes, and the only ones it renders are
+    // `lang` and the font class, neither of which varies.
+    <html lang={locale} className={manrope.variable} suppressHydrationWarning>
       <body>
         {/* Before the content div so it lands under z-10, and under the trace
             canvas too — page colour, surface, traces, content. */}
