@@ -618,15 +618,35 @@ function OverlayHalf(
     onBlur: () => setLit(false),
   };
 
+  // The ticket underneath reads a click as "pin the overlay open", which is what
+  // a tap needs on a device with no hover. A click that landed on an action was
+  // never meant for it: reaching Download through a pinned overlay toggled the
+  // pin straight back off, and the plate vanished under the cursor mid-gesture.
+  const stop = (event: { stopPropagation: () => void }) =>
+    event.stopPropagation();
+
   if (props.as === "a") {
     return (
-      <a href={props.href} target="_blank" rel="noopener noreferrer" {...shared}>
+      <a
+        href={props.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={stop}
+        {...shared}
+      >
         {inner}
       </a>
     );
   }
   return (
-    <button type="button" onClick={props.onClick} {...shared}>
+    <button
+      type="button"
+      onClick={(event) => {
+        stop(event);
+        props.onClick();
+      }}
+      {...shared}
+    >
       {inner}
     </button>
   );

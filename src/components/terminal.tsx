@@ -98,6 +98,7 @@ export function Terminal() {
   const [lines, setLines] = useState<Line[]>(BANNER);
   const [value, setValue] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const history = useRef<string[]>([]);
   const historyAt = useRef(-1);
@@ -210,18 +211,39 @@ export function Terminal() {
     }
   }
 
-  function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+  /**
+   * Keeps Tab inside the dialog without stopping it.
+   *
+   * It used to be refused outright, on the reasoning that the input was the only
+   * thing in here to focus. `contact` and `cv` print links, so that stopped
+   * being true and left them unreachable from the keyboard — the output was
+   * readable and its links were not.
+   */
+  function onDialogKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
       close();
       return;
     }
-    // The input is the only thing in here to focus, so Tab has nowhere to go
-    // that isn't back out into a page this dialog claims to cover.
-    if (event.key === "Tab") {
+    if (event.key !== "Tab") return;
+
+    const focusable = dialog.current?.querySelectorAll<HTMLElement>(
+      "a[href], button, input",
+    );
+    if (!focusable?.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
-      return;
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
+  }
+
+  function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
 
     event.preventDefault();
@@ -239,9 +261,11 @@ export function Terminal() {
 
   return (
     <div
+      ref={dialog}
       role="dialog"
       aria-modal="true"
       aria-label="Terminal"
+      onKeyDown={onDialogKeyDown}
       className="fixed inset-x-0 bottom-0 z-50 flex h-[60vh] flex-col border-t border-white/[0.16] bg-[#0a0a0a] font-mono text-[13px] shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)]"
     >
       <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-2 text-[10.5px] tracking-[0.14em] text-white/40 uppercase">
