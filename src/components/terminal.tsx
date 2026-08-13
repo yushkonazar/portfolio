@@ -167,6 +167,38 @@ function sharedPrefix(words: string[]) {
   return prefix;
 }
 
+/**
+ * What the typed text could become — read both by the list shown while typing
+ * and by Tab, so the two can't offer different things.
+ *
+ * `typed` comes back alongside the hits because the list wants to show which part
+ * of each candidate is already on the line, and `prefix` is what completing
+ * writes in front of the chosen one.
+ */
+function candidates(value: string) {
+  const text = value.trimStart();
+
+  // Past the verb: complete a destination rather than another command.
+  if (/^open\s/.test(text)) {
+    const typed = text.slice(5).trimStart();
+    const hits = PAGES.map(([target]) => target).filter((target) =>
+      target.startsWith(typed),
+    );
+    return { kind: "target" as const, typed, hits, prefix: `open ` };
+  }
+
+  // A verb only while it is still one word. Anything with a space in it has
+  // already committed to a command, and suggesting verbs then would be noise.
+  if (text === "" || /\s/.test(text)) {
+    return { kind: "none" as const, typed: text, hits: [], prefix: "" };
+  }
+
+  const hits = COMMANDS.map(([name]) => name).filter((name) =>
+    name.startsWith(text),
+  );
+  return { kind: "verb" as const, typed: text, hits, prefix: "" };
+}
+
 export function Terminal() {
   const [open, setOpen] = useState(false);
   const [lines, setLines] = useState<Line[]>(BANNER);
@@ -385,28 +417,21 @@ export function Terminal() {
     }
   }
 
-  /** Tab fills the verb in as far as the candidates agree. */
-  function complete() {
-    const text = value.trimStart();
-    // Second word: complete a destination instead of a verb.
-    if (/^open\s/.test(text)) {
-      const typed = text.slice(5).trimStart();
-      const hits = PAGES.map(([target]) => target).filter((target) =>
-        target.startsWith(typed),
-      );
-      if (hits.length === 0) return;
-      setValue(`open ${hits.length === 1 ? hits[0] : sharedPrefix(hits)}`);
-      if (hits.length > 1) append({ text: hits.join("  ") });
-      return;
-    }
+  /** What could be typed next, recomputed each render — it is a filter over two
+   * constant tables, so there is nothing here worth memoising. */
+  const suggestions = candidates(value);
 
-    if (text === "" || /\s/.test(text)) return;
-    const hits = COMMANDS.map(([name]) => name).filter((name) =>
-      name.startsWith(text),
-    );
+  /** Fills the line in as far as the candidates agree, the way a shell does. */
+  function complete() {
+    const { hits, prefix } = suggestions;
     if (hits.length === 0) return;
-    setValue(hits.length === 1 ? hits[0] : sharedPrefix(hits));
-    if (hits.length > 1) append({ text: hits.join("  ") });
+    setValue(prefix + (hits.length === 1 ? hits[0] : sharedPrefix(hits)));
+  }
+
+  /** Clicking a suggestion takes it whole, which is the point of showing it. */
+  function accept(hit: string) {
+    setValue(`${suggestions.prefix}${hit} `.trimStart());
+    input.current?.focus();
   }
 
   /**
@@ -519,30 +544,72 @@ export function Terminal() {
           ))}
         </div>
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            run(value);
-            setValue("");
-          }}
-          className="flex shrink-0 items-center gap-2 border-t border-white/[0.08] px-4 py-3"
-        >
-          <span aria-hidden className="text-accent-bright shrink-0">
-            {PROMPT}
-          </span>
-          <input
-            ref={input}
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            onKeyDown={onKeyDown}
-            aria-label="Command"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            maxLength={MAX_INPUT}
-            className="caret-accent-bright text-foreground min-w-0 flex-1 bg-transparent outline-none"
-          />
-        </form>
+        <div className="relative shrink-0">
+          {/* What the line could become, while it's being typed.
+
+              Absolutely positioned above the input rather than in the flow: a row
+              that appears and disappears as you type would move the input under
+              your hands on every keystroke.
+
+              `aria-hidden`, and the items are not focusable. Everything here is
+              also reachable by Tab, which completes from the same function this
+              list reads — so to a screen reader this is a second copy of a
+              feature it already has, and a focusable control hidden from the
+              accessibility tree is worse than no control. Ambiguous Tab used to
+              print the candidates into the scrollback; that was this, once per
+              press, and it isn't needed now. */}
+          {suggestions.hits.length > 0 && value.trim() !== "" && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute bottom-full left-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap gap-1 pb-2"
+            >
+              {suggestions.hits.map((hit) => (
+                <button
+                  key={hit}
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => accept(hit)}
+                  className="hover:border-accent/50 hover:bg-accent/[0.12] pointer-events-auto cursor-pointer rounded border border-white/[0.14] bg-[#0f0f0f] px-1.5 py-[3px] text-[11.5px] leading-none transition-colors"
+                >
+                  {/* The part already on the line, then the part Tab would add —
+                      so the list shows what completing does, not just what
+                      exists. */}
+                  <span className="text-accent-bright">
+                    {hit.slice(0, suggestions.typed.length)}
+                  </span>
+                  <span className="text-white/45">
+                    {hit.slice(suggestions.typed.length)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              run(value);
+              setValue("");
+            }}
+            className="flex items-center gap-2 border-t border-white/[0.08] px-4 py-3"
+          >
+            <span aria-hidden className="text-accent-bright shrink-0">
+              {PROMPT}
+            </span>
+            <input
+              ref={input}
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              onKeyDown={onKeyDown}
+              aria-label="Command"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={MAX_INPUT}
+              className="caret-accent-bright text-foreground min-w-0 flex-1 bg-transparent outline-none"
+            />
+          </form>
+        </div>
       </div>
     </div>
   );
