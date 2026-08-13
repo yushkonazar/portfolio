@@ -202,10 +202,9 @@
   }
 }
 
-/* One language, then the other, forever. Each face holds for about four seconds
-   and crosses over in half of one — long enough to read a sentence, short enough
-   that nobody waits for their language to come back around. Opacity only, so it
-   composites and neither face ever affects layout. */
+/* One language, then the other, forever. Each face holds about two and a half
+   seconds and crosses over in a third of one. Opacity only, so it composites and
+   neither face ever affects layout. */
 @keyframes locale-cycle {
   0%,
   44% {
@@ -279,20 +278,31 @@
      Both faces occupy the same grid cell, so the block is as tall as the longer
      language and neither swap moves anything below it — no measured height, and
      nothing to re-measure when the copy changes. */
+  /* Two variants because the buttons need one too, and a button's two labels
+     cannot fall into a column: block-stacking them under reduced motion would
+     make every button two lines tall. Same cell, same timing, different box. */
   .locale-cycle {
     display: grid;
   }
 
-  .locale-cycle > * {
+  .locale-cycle-inline {
+    display: inline-grid;
+  }
+
+  .locale-cycle > *,
+  .locale-cycle-inline > * {
     grid-area: 1 / 1;
-    animation: locale-cycle 9s ease-in-out infinite;
+    animation: locale-cycle 6s ease-in-out infinite;
   }
 
   /* Half a cycle in, as a negative delay rather than a second set of keyframes:
      anti-phase then holds by construction, and editing the timing cannot put the
-     two faces out of step or let both fade at once. */
-  .locale-cycle > *:nth-child(2) {
-    animation-delay: -4.5s;
+     two faces out of step or let both fade at once. Every group on the page
+     shares one duration and starts in the same frame, so the prose and the
+     buttons turn over together. */
+  .locale-cycle > *:nth-child(2),
+  .locale-cycle-inline > *:nth-child(2) {
+    animation-delay: -3s;
   }
 
   /* ── First-entry intro ────────────────────────────────────────────────────
@@ -453,16 +463,32 @@
   /* The 404 stops swapping and shows both languages at once, which is where it
      started. A crossfade is motion; two paragraphs are not, and the one thing
      this page must not do is hide the half a given reader can read. */
+  .locale-cycle > *,
+  .locale-cycle-inline > * {
+    animation: none;
+  }
+
   .locale-cycle {
     display: block;
   }
 
-  .locale-cycle > * {
-    animation: none;
-  }
-
   .locale-cycle > * + * {
     margin-top: 1.25rem;
+  }
+
+  /* A button's labels go side by side instead, separated the way they were
+     before they took turns. Stacking them would double the height of every
+     button on the page. */
+  .locale-cycle-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .locale-cycle-inline > * + *::before {
+    content: "·";
+    margin-right: 0.45rem;
+    opacity: 0.5;
   }
 }
 
