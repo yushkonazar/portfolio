@@ -202,6 +202,24 @@
   }
 }
 
+/* One language, then the other, forever. Each face holds for about four seconds
+   and crosses over in half of one — long enough to read a sentence, short enough
+   that nobody waits for their language to come back around. Opacity only, so it
+   composites and neither face ever affects layout. */
+@keyframes locale-cycle {
+  0%,
+  44% {
+    opacity: 1;
+  }
+  50%,
+  94% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* Moves the highlight with `transform`, not `background-position` — the
    latter repaints every frame on the main thread instead of compositing. */
 @keyframes skeleton-shimmer {
@@ -251,6 +269,30 @@
   /* The one-time "try clicking" label. */
   .burst-hint {
     animation: hint-flash 1500ms ease-in-out both;
+  }
+
+  /* ── The 404's two languages ───────────────────────────────────────────────
+     That page renders its own document outside the [locale] segment, so it has
+     no idea who arrived and says everything twice. Stacked, that was two
+     paragraphs of which one was noise to any given reader.
+
+     Both faces occupy the same grid cell, so the block is as tall as the longer
+     language and neither swap moves anything below it — no measured height, and
+     nothing to re-measure when the copy changes. */
+  .locale-cycle {
+    display: grid;
+  }
+
+  .locale-cycle > * {
+    grid-area: 1 / 1;
+    animation: locale-cycle 9s ease-in-out infinite;
+  }
+
+  /* Half a cycle in, as a negative delay rather than a second set of keyframes:
+     anti-phase then holds by construction, and editing the timing cannot put the
+     two faces out of step or let both fade at once. */
+  .locale-cycle > *:nth-child(2) {
+    animation-delay: -4.5s;
   }
 
   /* ── First-entry intro ────────────────────────────────────────────────────
@@ -406,6 +448,21 @@
      Tilt is refused outright, in the component. */
   .portrait-flipper {
     transition: none;
+  }
+
+  /* The 404 stops swapping and shows both languages at once, which is where it
+     started. A crossfade is motion; two paragraphs are not, and the one thing
+     this page must not do is hide the half a given reader can read. */
+  .locale-cycle {
+    display: block;
+  }
+
+  .locale-cycle > * {
+    animation: none;
+  }
+
+  .locale-cycle > * + * {
+    margin-top: 1.25rem;
   }
 }
 

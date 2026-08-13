@@ -32,26 +32,38 @@ export default function NotFound() {
             404
           </p>
 
-          <div>
-            <h1 className="mt-2.5 text-base font-medium md:text-lg">
-              This page cracked off somewhere.
-            </h1>
-            <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-              The link may be old, or I moved the page. The work is all one
-              click away.
-            </p>
-          </div>
+          {/* The two languages take turns instead of standing one above the
+              other, where whichever one a given reader couldn't use was just
+              noise under the one they could. Both stay in the markup and in the
+              accessibility tree — a crossfade hides nothing from a screen
+              reader, which reads them in order either way — and both sit in the
+              same grid cell, so the block is as tall as the longer of them and
+              the buttons below never move.
 
-          <div aria-hidden className="mt-5 h-px w-10 bg-white/15" />
+              The heading has to be one of the two, because a page gets one h1
+              and this document's lang is en. The Ukrainian face carries the same
+              sentence as a paragraph and its own lang, which is what a
+              translation of a heading is when the heading is already taken. */}
+          <div className="locale-cycle mt-2.5">
+            <div>
+              <h1 className="text-base font-medium md:text-lg">
+                This page cracked off somewhere.
+              </h1>
+              <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                The link may be old, or I moved the page. The work is all one
+                click away.
+              </p>
+            </div>
 
-          <div lang="uk" className="mt-5">
-            <p className="text-base font-medium md:text-lg">
-              Ця сторінка десь відкололася.
-            </p>
-            <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
-              Можливо, посилання застаріле, або я переніс сторінку. Усі проєкти
-              — за один клік.
-            </p>
+            <div lang="uk">
+              <p className="text-base font-medium md:text-lg">
+                Ця сторінка десь відкололася.
+              </p>
+              <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                Можливо, посилання застаріле, або я переніс сторінку. Усі
+                проєкти — за один клік.
+              </p>
+            </div>
           </div>
 
           <div className="mt-6 flex flex-wrap justify-center gap-2.5">
