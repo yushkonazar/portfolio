@@ -1,23 +1,30 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { routing, type Locale } from "@/i18n/routing";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { GlobeIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /**
- * One control rather than two words.
+ * Each language named in itself, which is the one rule a language list has: a
+ * reader looking for their own language is looking for the word they would use
+ * for it, not for our translation of it. So these are not in the message
+ * catalogue — "English" is not localised into Ukrainian here, it is the label.
+ */
+const NATIVE: Record<Locale, string> = {
+  uk: "Українська",
+  en: "English",
+};
+
+/**
+ * One button that opens the list.
  *
- * As two bare buttons this read as a pair of links that happened to be next to
- * each other, and which of them was live was carried only by their colour. A
- * segmented pill says "pick one of these" by its shape, and the lit half says
- * which is picked without relying on a hue.
- *
- * Deliberately not a popover with a trigger and a menu, which is what "a
- * separate button with a custom picker" would usually mean: for two options that
- * costs `aria-expanded`, a listbox pattern, Escape, outside-click and focus
- * return, to end up showing both choices the pill already shows. Two options is
- * the case where a segmented control *is* the custom picker.
+ * A disclosure holding two buttons rather than `role="menu"`: a menu promises
+ * arrow-key navigation and typeahead, and a menu role without them is a worse
+ * lie than no role at all. The trigger says `aria-expanded` and owns the panel,
+ * Tab walks the options and leaves, Escape closes and hands focus back.
  */
 export function LocaleSwitcher() {
   const locale = useLocale();
@@ -25,54 +32,122 @@ export function LocaleSwitcher() {
   const router = useRouter();
   const t = useTranslations("Header");
 
-  const active = routing.locales.indexOf(locale as Locale);
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+
+  const close = useCallback((returnFocus: boolean) => {
+    setOpen(false);
+    if (returnFocus) trigger.current?.focus();
+  }, []);
+
+  // A press anywhere else closes it. `pointerdown` rather than `click`, so the
+  // panel is gone before whatever was clicked underneath begins to act.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: PointerEvent) => {
+      if (!wrap.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
+
+  // Opening moves focus onto the first option, so the keyboard lands in the
+  // thing that just appeared instead of behind it.
+  useEffect(() => {
+    if (open) panel.current?.querySelector<HTMLElement>("button")?.focus();
+  }, [open]);
+
+  function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" && open) {
+      event.preventDefault();
+      close(true);
+    }
+  }
+
+  // Tab out of the last option should close it, and only when focus has actually
+  // left this control — `relatedTarget` is what tells those two apart.
+  function onBlur(event: React.FocusEvent<HTMLDivElement>) {
+    if (!event.relatedTarget || !wrap.current?.contains(event.relatedTarget)) {
+      setOpen(false);
+    }
+  }
+
+  function choose(next: Locale) {
+    // Closed before navigating, and without taking focus back to a trigger the
+    // next render replaces anyway.
+    setOpen(false);
+    if (next !== locale) router.replace(pathname, { locale: next });
+  }
 
   return (
     <div
-      role="group"
-      aria-label={t("language")}
-      className="relative flex items-center rounded-full border border-white/[0.12] p-[3px]"
+      ref={wrap}
+      onKeyDown={onKeyDown}
+      onBlur={onBlur}
+      className="relative"
     >
-      {/* The lit half travels with a transform, so one element moves and it
-          composites — restyling both buttons on every change would repaint them
-          and could not be animated between two states anyway.
+      <button
+        ref={trigger}
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-controls="locale-list"
+        aria-label={`${t("language")}: ${NATIVE[locale as Locale]}`}
+        className={cn(
+          "focus-visible:outline-accent-bright flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[11px] leading-none tracking-[0.1em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+          open
+            ? "border-accent/45 text-accent-bright"
+            : "text-muted-foreground hover:text-foreground border-white/[0.12] hover:border-white/25",
+        )}
+      >
+        <GlobeIcon className="h-[13px] w-[13px]" />
+        {locale}
+      </button>
 
-          The arithmetic is exact rather than approximate: this sits in the
-          container's padding box, so `50% - 3px` resolves to exactly one
-          button's width, and `translateX(100%)` is exactly one button across. */}
-      {/* The transition is a utility, not an inline style: inline would outrank
-          `motion-reduce:transition-none` and the travel would keep happening for
-          someone who asked for no motion. Which half is lit is information, and
-          it still moves — it just arrives. Only the transform is inline, because
-          it is the one value that changes. */}
-      <span
-        aria-hidden
-        className="bg-accent/[0.14] ring-accent/35 pointer-events-none absolute top-[3px] bottom-[3px] left-[3px] w-[calc(50%-3px)] rounded-full ring-1 transition-transform duration-[320ms] ease-[cubic-bezier(.2,.8,.2,1)] motion-reduce:transition-none"
-        style={{ transform: `translateX(${Math.max(active, 0) * 100}%)` }}
-      />
-
-      {routing.locales.map((loc) => (
-        <button
-          key={loc}
-          type="button"
-          onClick={() => router.replace(pathname, { locale: loc })}
-          // The current item within a set, which is what this is. Not
-          // `aria-pressed`: these navigate rather than toggle a setting.
-          aria-current={loc === locale ? "true" : undefined}
-          className={cn(
-            // `flex-1` so the halves are equal by construction. Both codes are
-            // two characters in a monospaced face, so they already match — but
-            // then the indicator's "half the width" would be true by coincidence
-            // rather than by the layout, and a three-letter code would break it.
-            "focus-visible:outline-accent-bright relative z-1 flex-1 cursor-pointer rounded-full px-2.5 py-[3px] font-mono text-[11px] leading-none tracking-[0.1em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
-            loc === locale
-              ? "text-accent-bright"
-              : "text-muted-foreground hover:text-foreground",
-          )}
+      {/* Kept out of the DOM while closed rather than hidden: there is nothing
+          in here worth pre-rendering, and an element that is only invisible is
+          the way a control ends up reachable by Tab while it looks shut. */}
+      {open && (
+        <div
+          ref={panel}
+          id="locale-list"
+          className="absolute top-[calc(100%+7px)] right-0 z-50 min-w-[9.5rem] overflow-hidden rounded-lg border border-white/[0.12] bg-[#0b0b0b] py-1 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.9)]"
         >
-          {loc}
-        </button>
-      ))}
+          {routing.locales.map((loc) => {
+            const current = loc === locale;
+            return (
+              <button
+                key={loc}
+                type="button"
+                lang={loc}
+                onClick={() => choose(loc)}
+                aria-current={current ? "true" : undefined}
+                className={cn(
+                  "focus-visible:outline-accent-bright flex w-full cursor-pointer items-center gap-2 px-3 py-[7px] text-left text-[13px] transition-colors focus-visible:-outline-offset-2 focus-visible:outline-2",
+                  current
+                    ? "text-accent-bright"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]",
+                )}
+              >
+                {/* A mark, not a colour, carries which one is live — the colour
+                    is the same information again for anyone who can see it. */}
+                <span aria-hidden className="w-3 shrink-0 text-center">
+                  {current ? "·" : ""}
+                </span>
+                {NATIVE[loc]}
+                <span
+                  aria-hidden
+                  className="ml-auto font-mono text-[10px] tracking-[0.1em] uppercase opacity-45"
+                >
+                  {loc}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,31 @@ type IconProps = { className?: string };
  * Shapes stay recognisable; the colour comes from whatever they sit in.
  */
 
+/**
+ * Not a brand mark, and the only one here drawn in strokes: the three above are
+ * logos with fixed silhouettes, while this is a UI glyph that has to hold up at
+ * 15px next to them. A filled globe at that size closes its own gaps into a
+ * blob — the meridians are the whole idea, so they have to stay open.
+ */
+export function GlobeIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      aria-hidden
+      className={className}
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 9.5h18M3 14.5h18" />
+      {/* The two meridians, as ellipses squeezed to nothing at the poles. */}
+      <path d="M12 3c2.4 2.4 3.6 5.4 3.6 9s-1.2 6.6-3.6 9c-2.4-2.4-3.6-5.4-3.6-9S9.6 5.4 12 3z" />
+    </svg>
+  );
+}
+
 export function MailIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
