@@ -1,35 +1,10 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { CodeNumeral } from "@/components/code-numeral";
 import { PageTexture } from "@/components/page-texture";
 import { SiteBackground } from "@/components/site-background";
 import { manrope } from "./fonts";
 import "./globals.css";
-
-/**
- * This is the one page whose subject is code that didn't resolve, so it is set in
- * the face people write paths in. Cyrillic is included because the copy
- * alternates between two languages and one of them needs it — Latin-only would
- * drop the Ukrainian face to a fallback halfway through a crossfade.
- *
- * `preload: false` is the part that matters, and it took measuring to find. The
- * app builds to a single CSS chunk, so every @font-face declared anywhere lands
- * in the stylesheet every page loads, and Next emits a preload link for each —
- * which had the home page fetching 40KB of a mono it renders no character of.
- * Moving the declaration out of ./fonts and into this file changed nothing,
- * because the chunk is shared regardless of which module declared it. Without
- * the preload the face is still declared everywhere and fetched only where text
- * actually asks for it, which is here. `display: swap` covers the wait.
- */
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-  weight: ["400", "700"],
-  preload: false,
-});
 
 export const metadata: Metadata = {
   title: "Page not found — Yushko Nazar",
@@ -63,10 +38,7 @@ function Bilingual({ en, uk }: { en: string; uk: string }) {
  */
 export default function NotFound() {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${jetbrainsMono.variable}`}
-    >
+    <html lang="en" className={manrope.variable}>
       <body>
         {/* Texture first, then the traces over it — the same order the locale
             layout stacks them in. */}
@@ -74,61 +46,41 @@ export default function NotFound() {
         <SiteBackground />
 
         <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-20">
-          {/* The debris and the numeral share this box, so the cloud is centred
-              on the thing that broke. Its height is fixed rather than derived
-              from the numeral: the fragments are positioned in percentages, and
-              a box that hugged its text would collapse the whole spread onto one
-              line. Overflow is clipped here rather than on <body>, which would
-              take the page's own scrolling with it. */}
-          {/* `overflow-hidden` belongs here now. It used to live on the generated
-              cloud's own container; replacing that with an image 118% of this
-              box's width left nothing clipping it, and the page gained a
-              horizontal scrollbar. */}
+          {/* The artwork's own box, clipping it. `overflow-hidden` has to be here:
+              the image is wider than this on purpose, so the cloud reads as
+              continuing past the frame, and with nothing clipping it the page
+              gained a horizontal scrollbar. */}
           <div className="relative flex h-[300px] w-full items-center justify-center overflow-hidden sm:h-[380px]">
-            {/* The supplied artwork, keyed and trimmed rather than used as it
-                arrived: it came 2608x1600 and 6.3MB with an opaque painted
-                checkerboard behind it — the alpha channel was there but every
-                pixel in it was 255. Every empty corner topped out at luminance
-                24 while the content runs to 255, with 91% of pixels below 32 and
-                a flat tail above, so the background keys out on a ramp from 24 to
-                48. RGB is left as it was: the antialiased edges keep their
-                dark-mixed colour, which is invisible against a near-black page
-                and saves un-premultiplying every one of them.
+            {/* Keyed, trimmed and centred rather than used as it arrived.
 
-                Held at 70%: it is the floor the number stands on, and at full
-                strength its lettering competed with the number for the eye.
+                It came 2608x1600 and 6.3MB with an opaque painted checkerboard
+                behind it — the alpha channel was there and every pixel in it was
+                255. Every empty corner topped out at luminance 24 while the
+                content runs to 255, with 91% of pixels below 32 and a flat tail
+                above, so the background keys out on a ramp from 24 to 48. RGB is
+                left as it was: the antialiased edges keep their dark-mixed
+                colour, which is invisible against a near-black page and saves
+                un-premultiplying every one of them.
 
-                Wider than its box on purpose, and clipped by it, so the cloud
-                reads as continuing past the frame. */}
+                Trimming to the content's bounding box is what left it looking
+                shifted. The box is stretched by a few thin trace lines reaching
+                further right than anything else, so the dense cloud sat left of
+                the middle of it — measured, the outer fifth of the width carried
+                3.7% of the mass. It is now cropped symmetrically about the
+                midpoint of the span holding the middle 90% of the alpha mass,
+                which puts the visual centre at 49.9% and keeps 99.6% of it.
+
+                Held at 70%: at full strength its lettering asks to be read, and
+                it is a surface rather than a text. */}
             <Image
               src="/404-debris.webp"
               alt=""
               aria-hidden
-              width={900}
-              height={588}
+              width={860}
+              height={610}
               priority
               className="pointer-events-none absolute top-1/2 left-1/2 w-[118%] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-70 select-none"
             />
-
-            {/* Just enough shade for the numeral to sit on, shaped to it rather
-                than to the box. `closest-side` covered the whole field and put
-                out the middle of the cloud — which is the brightest part of it,
-                being where the break happened. An ellipse the size of the number
-                clears the number and leaves the rest lit. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(ellipse 48% 38% at 50% 50%, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.55) 52%, rgba(5,5,5,0) 82%)",
-              }}
-            />
-
-            {/* The number is a dot matrix of code tokens, not a glyph — see
-                CodeNumeral. `--cell` is the one dial for its size, and `role=img`
-                with a label is what keeps it a "404" to a screen reader instead
-                of sixteen unrelated fragments of syntax. */}
-            <CodeNumeral className="relative [--cell:15px] sm:[--cell:21px]" />
           </div>
 
           {/* Pulled up into the bottom of the cloud, the way the sentence sits
