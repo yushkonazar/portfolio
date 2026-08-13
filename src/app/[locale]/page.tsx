@@ -6,7 +6,6 @@ import { Hero } from "@/components/hero";
 import { Services } from "@/components/services";
 import { FeaturedWork } from "@/components/featured-work";
 import { BurstHint } from "@/components/burst-hint";
-import { Terminal } from "@/components/terminal";
 import type { Locale } from "@/i18n/routing";
 
 export default async function Home({
@@ -118,11 +117,12 @@ setTimeout(d,2200);
 
       <Footer />
 
-      {/* Both live on the home page only. The terminal answers questions about
-          the work and the stack, and the hint points at the canvas the hero
-          runs — neither has anything to say on a case page or the resume. */}
+      {/* The hint points at the canvas the hero runs, so it has nothing to say
+          anywhere else. The terminal moved to the locale layout: its answers are
+          about the work, the stack and how to reach me, none of which is
+          home-page-specific, and the mark that opens it is in the footer of every
+          page. Leaving it here made that mark dead on four routes out of six. */}
       <BurstHint />
-      <Terminal />
     </div>
   );
 }

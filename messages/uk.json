@@ -9,6 +9,10 @@
     "github": "Профіль на GitHub",
     "language": "Мова"
   },
+  "Footer": {
+    "terminal": "Відкрити термінал",
+    "terminalHint": "Термінал — або клавіша `"
+  },
   "Services": {
     "caption": "Одна людина — весь цикл",
     "buildTitle": "Вебзастосунки під ключ",

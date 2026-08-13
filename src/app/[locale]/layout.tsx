@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { manrope } from "../fonts";
 import { PageTexture } from "@/components/page-texture";
+import { Terminal } from "@/components/terminal";
 import "../globals.css";
 
 const SITE_URL = "https://yushko.dev";
@@ -86,6 +87,11 @@ export default async function LocaleLayout({
         <PageTexture />
         <NextIntlClientProvider>
           <div className="relative z-10">{children}</div>
+          {/* A sibling of the content rather than inside it, which is what lets
+              it make everything else inert while it's up — see the effect that
+              does. Every page, because the mark that opens it is in every
+              footer. */}
+          <Terminal />
         </NextIntlClientProvider>
         {cfBeaconToken && (
           <Script

@@ -9,6 +9,10 @@
     "github": "GitHub profile",
     "language": "Language"
   },
+  "Footer": {
+    "terminal": "Open the terminal",
+    "terminalHint": "Terminal — or press the ` key"
+  },
   "Services": {
     "caption": "One person, the whole build",
     "buildTitle": "Web apps, start to finish",
