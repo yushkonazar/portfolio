@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
-import { CodeDebris, CodeNumeral } from "@/components/code-debris";
+import { CodeNumeral } from "@/components/code-numeral";
 import { PageTexture } from "@/components/page-texture";
 import { SiteBackground } from "@/components/site-background";
 import { manrope } from "./fonts";
@@ -79,8 +80,35 @@ export default function NotFound() {
               a box that hugged its text would collapse the whole spread onto one
               line. Overflow is clipped here rather than on <body>, which would
               take the page's own scrolling with it. */}
-          <div className="relative flex h-[300px] w-full items-center justify-center sm:h-[380px]">
-            <CodeDebris />
+          {/* `overflow-hidden` belongs here now. It used to live on the generated
+              cloud's own container; replacing that with an image 118% of this
+              box's width left nothing clipping it, and the page gained a
+              horizontal scrollbar. */}
+          <div className="relative flex h-[300px] w-full items-center justify-center overflow-hidden sm:h-[380px]">
+            {/* The supplied artwork, keyed and trimmed rather than used as it
+                arrived: it came 2608x1600 and 6.3MB with an opaque painted
+                checkerboard behind it — the alpha channel was there but every
+                pixel in it was 255. Every empty corner topped out at luminance
+                24 while the content runs to 255, with 91% of pixels below 32 and
+                a flat tail above, so the background keys out on a ramp from 24 to
+                48. RGB is left as it was: the antialiased edges keep their
+                dark-mixed colour, which is invisible against a near-black page
+                and saves un-premultiplying every one of them.
+
+                Held at 70%: it is the floor the number stands on, and at full
+                strength its lettering competed with the number for the eye.
+
+                Wider than its box on purpose, and clipped by it, so the cloud
+                reads as continuing past the frame. */}
+            <Image
+              src="/404-debris.webp"
+              alt=""
+              aria-hidden
+              width={900}
+              height={588}
+              priority
+              className="pointer-events-none absolute top-1/2 left-1/2 w-[118%] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-70 select-none"
+            />
 
             {/* Just enough shade for the numeral to sit on, shaped to it rather
                 than to the box. `closest-side` covered the whole field and put
