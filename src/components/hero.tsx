@@ -31,8 +31,21 @@ export function Hero({
     <section className="relative overflow-hidden">
       {/* The fracture animation, confined to the hero and masked away from the
           headline so it never fights the type. */}
+      {/* `avoid` names the portrait so the first-entry trace is routed clear of
+          it. The mask keeps this canvas off the headline, but nothing kept it
+          out from behind the photograph, which covers 66% to 87% of the width
+          for all but the top 42px — so the one scripted moment on the site spent
+          most of its run behind an opaque object. Ambient traces still pass
+          behind it, which is the texture doing its job. */}
       <div className="hero-crack-mask pointer-events-none absolute inset-0">
-        <SiteBackground scoped region="right" bursts={2} cap={16} choreo />
+        <SiteBackground
+          scoped
+          region="right"
+          bursts={2}
+          cap={16}
+          choreo
+          avoid=".portrait-frame"
+        />
       </div>
       {/* No warm blob behind the portrait any more. A radial sitting where an
           opaque object stands does not light it — it silhouettes it, which is
@@ -83,14 +96,26 @@ export function Hero({
             ))}
           </h1>
 
-          <p className="mt-4 text-base font-medium md:mt-[18px] md:text-[19px]">
+          {/* The name's rise carries on down the hero — these three lift half as
+              far, in order, so the whole block arrives instead of one line of
+              it. `--lift` is their place in the queue. */}
+          <p
+            className="intro-lift mt-4 text-base font-medium md:mt-[18px] md:text-[19px]"
+            style={{ "--lift": 0 } as CSSProperties}
+          >
             {role}
           </p>
-          <p className="text-muted-foreground mt-2 max-w-[500px] text-sm leading-relaxed text-pretty md:text-[15px]">
+          <p
+            className="intro-lift text-muted-foreground mt-2 max-w-[500px] text-sm leading-relaxed text-pretty md:text-[15px]"
+            style={{ "--lift": 1 } as CSSProperties}
+          >
             {intro}
           </p>
 
-          <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center md:mt-[26px]">
+          <div
+            className="intro-lift mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center md:mt-[26px]"
+            style={{ "--lift": 2 } as CSSProperties}
+          >
             <a
               href="#contact"
               className="bg-accent text-accent-foreground hover:bg-accent-bright focus-visible:outline-accent-bright flex h-12 items-center justify-center rounded-lg px-6 text-[14.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-[46px]"

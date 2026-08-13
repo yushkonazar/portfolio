@@ -129,32 +129,40 @@ const AMBIENT_EDGE_MARGIN = 0.15;
 // after is the usual ambient behaviour.
 
 /**
- * Where the trace crosses the top edge, as a fraction of the canvas width.
+ * The trace descends rather than cutting in at 45°, and the reason is the hero's
+ * own layout.
  *
- * The entry point is chosen first and the landing derived from it, which is the
- * reverse of how this started. Naming a fractional target and deriving the
- * origin from it makes the entry `0.74W - 0.42H` — a function of the aspect
- * ratio, not of anything the design intended. Measured, that put the entry at
- * 58% of the width on a 1265x474 hero, 55% at 1265x560, 49% on a tablet and 5%
- * on a phone. The mask below only clears at 56%, so the sequence degraded from
- * "just visible" to "entirely behind the mask" as the hero got taller.
+ * A canvas fraction is not the same thing as clear space. This one is masked
+ * transparent below 30% of its width and only opaque past 56%, and the portrait
+ * is painted over it from 66.6% to 87.4% — measured, on a 1265x474 hero — for
+ * all but the top 42px of its height. A 45° approach aimed anywhere useful spent
+ * a hundred-odd pixels in the open and the rest of its run behind the
+ * photograph, which is exactly what it looked like.
  *
- * From 0.68 it is past the mask at every size, because the number *is* the
- * fraction of the width rather than a residue of two of them.
+ * What is left is a vertical corridor between the text and the portrait, ~178px
+ * of genuinely empty canvas. Straight down it, the trace gets roughly 340px of
+ * visible run instead of 141px, and the crack reads as opening between the name
+ * and the face rather than disappearing behind one of them. 90° is on the
+ * lattice — it is 2x LATTICE — so `createFissure` snaps it to itself.
  */
-const CHOREO_ENTRY_X = 0.68;
+/** How far left of the obstacle the descent runs, as a fraction of the width. */
+const CHOREO_CORRIDOR_INSET = 0.055;
+/** Where the corridor is when there is no obstacle to measure — below `md` the
+ * portrait isn't rendered at all, so the hero is text the full width. */
+const CHOREO_FALLBACK_X = 0.8;
+/** Never left of this: the mask is still fading below it. */
+const CHOREO_MIN_X = 0.58;
 /**
- * The axis-aligned run from the entry to the landing. The approach must be
- * exactly 45°, because `createFissure` snaps every heading onto the lattice, so
- * the horizontal and vertical components are equal and one number sets both.
- *
- * Bounded by height as well as width: a wide, short hero would otherwise put
- * the landing below its bottom edge.
+ * How far the trace descends, as a fraction of the canvas height. Short of the
+ * button row, which is the one thing in the hero that reaches into the corridor.
  */
-const CHOREO_RUN_W = 0.22;
-const CHOREO_RUN_H = 0.55;
-/** Keeps the landing off the right edge on a hero wide enough for the run. */
-const CHOREO_RIGHT_MARGIN = 0.03;
+const CHOREO_DROP = 0.72;
+/**
+ * Arms in the impact, fixed rather than the ambient 2-3. This is the one break on
+ * the page anyone is asked to watch, and at the ambient count it was
+ * indistinguishable from the ones that follow it every couple of seconds.
+ */
+const CHOREO_IMPACT_ARMS = 6;
 /**
  * How far above the top edge the trace starts, so it enters already moving —
  * as a fraction of the run rather than a flat 60px. Flat, it was a constant
@@ -324,6 +332,13 @@ type SiteBackgroundProps = {
    * that sets it knows if this is a first visit — the server can't.
    */
   choreo?: boolean;
+  /**
+   * Selector for something opaque painted over this canvas, so the first-entry
+   * trace can be routed clear of it. Only the sequence uses it — ambient traces
+   * running behind the furniture is the texture working as intended, but the one
+   * moment that has to be watched cannot be behind anything.
+   */
+  avoid?: string;
 };
 
 export function SiteBackground({
@@ -332,6 +347,7 @@ export function SiteBackground({
   bursts = AMBIENT_BURSTS,
   cap = HARD_CAP,
   choreo = false,
+  avoid,
 }: SiteBackgroundProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -359,6 +375,9 @@ export function SiteBackground({
     /** The scripted trace itself, so its impact can wait for it rather than for
      * a stopwatch. Dropped as soon as the sequence is over. */
     let choreoArm: Fissure | null = null;
+    /** Its route length, kept from the spawn so the arrival test doesn't have to
+     * measure the layout again on every frame. */
+    let choreoDistance = 0;
 
     const styles = getComputedStyle(document.documentElement);
     const [ar, ag, ab] = hexToRgb(
@@ -473,8 +492,14 @@ export function SiteBackground({
 
     /** A burst: several arms radiating from one point, the way a fracture
      * actually starts — not a single thread that occasionally forks. */
-    function spawnBurstAt(x: number, y: number, minLen: number, maxLen: number) {
-      const arms = Math.floor(randomBetween(ARM_MIN, ARM_MAX + 1));
+    function spawnBurstAt(
+      x: number,
+      y: number,
+      minLen: number,
+      maxLen: number,
+      armCount?: number,
+    ) {
+      const arms = armCount ?? Math.floor(randomBetween(ARM_MIN, ARM_MAX + 1));
       const base = Math.random() * Math.PI * 2;
       const step = (Math.PI * 2) / arms;
       let added = 0;
@@ -556,32 +581,64 @@ export function SiteBackground({
       spawnBurstAt(x, y, 160, 420);
     }
 
-    /** The entry and landing, in canvas pixels. Read twice — once to route the
-     * trace, once as the fallback landing if it never gets there. */
+    /**
+     * The corridor the trace descends, in canvas pixels.
+     *
+     * Measured against whatever the hero paints over this canvas rather than
+     * assumed: `avoid` names it, and its left edge is the right wall. Called once
+     * per sequence, from the spawn — a getBoundingClientRect per frame to
+     * re-derive a number that cannot change mid-descent is a layout read for
+     * nothing.
+     */
     function choreoRoute() {
-      const run = Math.min(width * CHOREO_RUN_W, height * CHOREO_RUN_H);
-      const lead = run * CHOREO_LEAD_IN;
-      const entryX = Math.min(
-        width * CHOREO_ENTRY_X,
-        width * (1 - CHOREO_RIGHT_MARGIN) - run,
-      );
+      const obstacle = avoid ? document.querySelector(avoid) : null;
+      const box = obstacle?.getBoundingClientRect();
+      const wall =
+        box && box.width > 0
+          ? box.left - canvas.getBoundingClientRect().left
+          : width * CHOREO_FALLBACK_X;
+
+      const x = Math.max(width * CHOREO_MIN_X, wall - width * CHOREO_CORRIDOR_INSET);
+      const drop = height * CHOREO_DROP;
+      const lead = drop * CHOREO_LEAD_IN;
       return {
-        origin: { x: entryX - lead, y: -lead },
-        target: { x: entryX + run, y: run },
-        /** Along the path, not along an axis — what `grown` counts. */
-        distance: (run + lead) * Math.SQRT2,
+        origin: { x, y: -lead },
+        target: { x, y: drop },
+        /** Straight down, so the path length is the vertical distance. */
+        distance: drop + lead,
       };
     }
 
     /**
-     * The scripted arrival: one trace, one route, no dice rolled. It still
-     * corners on its own the way every other trace does — the script sets where
-     * it comes in and where it's headed, not each segment.
+     * The scripted arrival: one trace, one route, no dice rolled.
+     *
+     * Unlike every other trace on the canvas this one does not corner. Left to
+     * wander it took ±45° or ±90° every 7-20 steps and could accumulate a half
+     * turn, which puts a 42-120px run's worth of drift — up to ~85px of x —
+     * against a corridor with 70px of clearance to the portrait and 64px to the
+     * mask. It would have gone behind the photograph again by a different route.
+     *
+     * Straightness also settles something the arrival test had wrong: it compares
+     * `grown`, which is length along the path, against a straight-line distance.
+     * For a zigzag those are different numbers, so the impact fired at the right
+     * *path length* with the tip somewhere unpredictable. Straight, the two are
+     * the same measurement.
+     *
+     * The organic detail is not lost — its forks still come off it and wander as
+     * they like, including behind the photograph, which is where that texture
+     * belongs. One decisive line that then breaks is the shape of the moment.
      */
     function spawnChoreoMajor() {
       const { origin, distance } = choreoRoute();
-      if (!addArm(origin, LATTICE, distance * CHOREO_OVERSHOOT, 0, true)) return;
+      // 2x LATTICE is straight down, and snapping leaves it there.
+      if (!addArm(origin, LATTICE * 2, distance * CHOREO_OVERSHOOT, 0, true)) {
+        return;
+      }
       choreoArm = fissures[fissures.length - 1];
+      choreoDistance = distance;
+      // `step` decrements this and only corners when it reaches zero, so no
+      // finite run of steps ever gets there.
+      choreoArm.stepsToTurn = Infinity;
       // Overrides the random speed createFissure gave it: this is the one trace
       // on the canvas that has to arrive at a stated time, so its speed comes
       // out of the distance it has to cover rather than the other way round.
@@ -619,11 +676,17 @@ export function SiteBackground({
          arm instead makes the two the same event, and a trace arrested early by
          something in its path breaks where it stopped rather than where the
          script hoped. */
-      const arrived = choreoArm.grown >= choreoRoute().distance;
+      const arrived = choreoArm.grown >= choreoDistance;
       if (!arrived && choreoArm.phase === "growing") return;
 
+      /* A fixed arm count, and more of them than an ambient burst gets: this is
+         the one break on the page anybody is asked to look at, and at the
+         ambient 2-3 it was the same event as the ones that follow it every
+         couple of seconds. Sized against the drop rather than the flat 170-430,
+         so the fracture is in proportion to the trace that caused it. */
       const tip = choreoArm.points[choreoArm.points.length - 1];
-      spawnBurstAt(tip.x, tip.y, 170, 430);
+      const reach = height * CHOREO_DROP;
+      spawnBurstAt(tip.x, tip.y, reach * 0.4, reach * 0.85, CHOREO_IMPACT_ARMS);
       choreoStage = 2;
       choreoArm = null;
       // Ambient work resumes from here, so the scripted trace and its impact are
@@ -1074,7 +1137,7 @@ export function SiteBackground({
       window.removeEventListener("portfolio:burst", onRequestedBurst);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [scoped, region, bursts, cap, choreo]);
+  }, [scoped, region, bursts, cap, choreo, avoid]);
 
   return (
     <canvas

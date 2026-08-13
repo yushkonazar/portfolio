@@ -80,7 +80,7 @@ var s=function(){r.setAttribute("data-intro-skip","");d()};
 addEventListener("pointerdown",s,{passive:true});
 addEventListener("keydown",s);
 addEventListener("wheel",s,{passive:true});
-setTimeout(d,1900);
+setTimeout(d,2200);
 }catch(e){}})();`,
         }}
       />
