@@ -55,12 +55,6 @@ export const projectMeta: Record<string, ProjectMeta> = {
         label: { en: "daily since", uk: "щодня з" },
       },
     ],
-    // Addressed to the visitor, not to me — the previous wording was a TODO
-    // that every reader of the flagship project got to see.
-    screenshotPlaceholder: {
-      en: "Dashboard preview coming shortly",
-      uk: "Прев'ю дашборда — незабаром",
-    },
   },
   moviehouse: {
     short: {

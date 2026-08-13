@@ -211,10 +211,25 @@ export const projects: Project[] = [
       en: "Private repository — code available on request.",
       uk: "Приватний репозиторій — код доступний за запитом.",
     },
-    // No `media` yet: a Mini App dashboard is the one thing here that a still
-    // frame undersells, so this waits for a short muted screencast (webm plus
-    // a poster frame) rather than settling for a screenshot. The row shows
-    // projectMeta.svitanok.screenshotPlaceholder until then.
+    /**
+     * Three Mini App screens in one frame rather than the screencast this used
+     * to wait for. A still undersells motion, but three stills carry something a
+     * clip of one screen doesn't: the tab bar at the foot of each, with a
+     * different section lit, which is what says this is an application and not a
+     * page.
+     *
+     * Composited into a single asset rather than three elements in a row. The
+     * frame is 340x184 and three of these shots side by side come to 1.882
+     * against its 1.848, so the gap has to be paid for — 2% of the height for
+     * the seams costs ~2% off each shot's sides, inside the app's own padding.
+     * Doing that in the image means the seam is exact and the browser crops
+     * nothing; doing it in CSS would have left all of it to `object-cover`.
+     */
+    screenshot: {
+      src: "/svitanok-dashboard.webp",
+      width: 1359,
+      height: 736,
+    },
   },
 ];
 
