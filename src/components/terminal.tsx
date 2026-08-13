@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { projects } from "@/lib/projects";
 import { featuredOrder, projectMeta } from "@/lib/project-meta";
 import { contacts } from "@/lib/contacts";
+import { now } from "@/lib/now";
 import { skillGroups } from "@/lib/resume";
 
 /**
@@ -64,6 +65,7 @@ const COMMANDS: [name: string, blurb: string][] = [
   ["contact", "how to reach me"],
   ["cv", "the resume, as a PDF"],
   ["whoami", "who's asking"],
+  ["now", "what I'm working on"],
   ["history", "what you've typed"],
   ["clear", "wipe the screen"],
   ["exit", "close the terminal"],
@@ -375,6 +377,15 @@ export function Terminal() {
           echo,
           { text: `guest, reading ${pathname} in ${document.documentElement.lang}` },
           { text: `local time ${new Date().toLocaleTimeString()}` },
+        );
+      // Dated on screen, not in a comment: whoever reads it can see for
+      // themselves whether it is still current.
+      case "now":
+        return append(
+          echo,
+          ...now.lines.map((text) => ({ text })),
+          { text: "" },
+          { text: `as of ${now.asOf}` },
         );
       case "history":
         return append(
