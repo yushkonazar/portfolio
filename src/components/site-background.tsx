@@ -129,33 +129,57 @@ const AMBIENT_EDGE_MARGIN = 0.15;
 // after is the usual ambient behaviour.
 
 /**
- * Where the sequence lands, as a fraction of the canvas. Pushed right of the
- * original 0.62: the hero canvas is masked transparent below 30% of its width
- * and only fully opaque past 56%, so a target at 0.62 left the trace barely a
- * sliver of visible runway before it arrived. From here the approach crosses
- * real screen.
+ * Where the trace crosses the top edge, as a fraction of the canvas width.
+ *
+ * The entry point is chosen first and the landing derived from it, which is the
+ * reverse of how this started. Naming a fractional target and deriving the
+ * origin from it makes the entry `0.74W - 0.42H` — a function of the aspect
+ * ratio, not of anything the design intended. Measured, that put the entry at
+ * 58% of the width on a 1265x474 hero, 55% at 1265x560, 49% on a tablet and 5%
+ * on a phone. The mask below only clears at 56%, so the sequence degraded from
+ * "just visible" to "entirely behind the mask" as the hero got taller.
+ *
+ * From 0.68 it is past the mask at every size, because the number *is* the
+ * fraction of the width rather than a residue of two of them.
  */
-const CHOREO_TARGET = { x: 0.74, y: 0.42 };
+const CHOREO_ENTRY_X = 0.68;
 /**
- * How far above the top edge the trace starts. Its origin is then derived so the
- * approach is exactly 45°, because `createFissure` snaps every heading onto the
- * lattice: aimed straight at the target the angle works out near 16°, which
- * rounds to horizontal, and the trace would run off the top of the frame
- * instead of into the hero.
+ * The axis-aligned run from the entry to the landing. The approach must be
+ * exactly 45°, because `createFissure` snaps every heading onto the lattice, so
+ * the horizontal and vertical components are equal and one number sets both.
+ *
+ * Bounded by height as well as width: a wide, short hero would otherwise put
+ * the landing below its bottom edge.
  */
-const CHOREO_ENTRY_MARGIN = 60;
-/** Overshoot past the target, so the trace doesn't stop dead on the burst. */
+const CHOREO_RUN_W = 0.22;
+const CHOREO_RUN_H = 0.55;
+/** Keeps the landing off the right edge on a hero wide enough for the run. */
+const CHOREO_RIGHT_MARGIN = 0.03;
+/**
+ * How far above the top edge the trace starts, so it enters already moving —
+ * as a fraction of the run rather than a flat 60px. Flat, it was a constant
+ * distance covered at a speed that scales with the canvas, so it ate a fifth of
+ * the approach on a desktop and two thirds of it on a small phone, where the
+ * trace stayed off-frame until 487ms of a 750ms sequence. Proportional, the
+ * trace clears the edge at the same point in the timeline at every size.
+ */
+const CHOREO_LEAD_IN = 0.25;
+/** Overshoot past the landing, so the trace doesn't stop dead on the burst. */
 const CHOREO_OVERSHOOT = 1.15;
 /**
- * Timing tuned by watching it rather than by arithmetic: at ×1.5 with the burst
- * at 400ms the trace had covered a hundred-odd pixels of a masked region by the
- * time the thing it was supposedly causing had already happened, so there was
- * nothing to see. Faster trace, later burst, and the two now read as cause and
- * effect.
+ * How long the approach takes, with the speed derived from it — the reverse of
+ * every other trace on the canvas, which is given a speed and takes as long as
+ * its length requires.
+ *
+ * A choreography is a timeline, and this one has to line up with two CSS
+ * animations it can't see: the words rise from 900ms and the badge catches at
+ * 1600ms, both set in globals.css against this number. Fixing the speed instead
+ * made the duration a function of the viewport, because the run scales with the
+ * canvas: measured, the same sequence took 870ms on a desktop and was over at
+ * 470ms on a phone, before the words it is supposed to arrive with had begun.
  */
-const CHOREO_SPEED_SCALE = 2.4;
+const CHOREO_APPROACH_MS = 750;
 const CHOREO_MAJOR_MS = 120;
-const CHOREO_BURST_MS = 760;
 
 const FIRST_SPAWN_MS = 500;
 // Shorter still on request — bursts should appear more often — while
@@ -332,6 +356,9 @@ export function SiteBackground({
       choreo && document.documentElement.hasAttribute("data-intro");
     let choreoStage = introducing ? 0 : 2;
     let choreoElapsed = 0;
+    /** The scripted trace itself, so its impact can wait for it rather than for
+     * a stopwatch. Dropped as soon as the sequence is over. */
+    let choreoArm: Fissure | null = null;
 
     const styles = getComputedStyle(document.documentElement);
     const [ar, ag, ab] = hexToRgb(
@@ -346,7 +373,12 @@ export function SiteBackground({
     let width = 0;
     let height = 0;
     let elapsedSeconds = 0;
-    let nextSpawnIn = FIRST_SPAWN_MS;
+    /* Held off entirely while the intro plays — `advanceChoreo` starts the clock
+       once the scripted impact has fired. The first ambient burst used to be due
+       at 500ms, which landed between the trace appearing and the thing it was
+       supposed to cause, so the one scripted moment on the site shared the
+       screen with random ones and read as more of the same. */
+    let nextSpawnIn = introducing ? Infinity : FIRST_SPAWN_MS;
     let nextMajorIn = randomBetween(MAJOR_MIN_MS, MAJOR_MAX_MS);
     let rafId = 0;
     let lastTime = 0;
@@ -423,7 +455,8 @@ export function SiteBackground({
     }
 
     /** Reports whether the arm was actually taken, so a caller can tell a real
-     * burst from one the cap refused outright. */
+     * burst from one the cap refused outright. The new arm is the last entry in
+     * `fissures`, which is how the intro gets hold of the one it asked for. */
     function addArm(
       origin: Point,
       angle: number,
@@ -431,12 +464,9 @@ export function SiteBackground({
       depth: number,
       major = false,
       grace = 0,
-      speedScale = 1,
     ) {
       if (liveArms >= armCap) return false;
-      const fissure = createFissure(origin, angle, target, depth, major, grace);
-      fissure.speed *= speedScale;
-      fissures.push(fissure);
+      fissures.push(createFissure(origin, angle, target, depth, major, grace));
       liveArms++;
       return true;
     }
@@ -526,51 +556,79 @@ export function SiteBackground({
       spawnBurstAt(x, y, 160, 420);
     }
 
+    /** The entry and landing, in canvas pixels. Read twice — once to route the
+     * trace, once as the fallback landing if it never gets there. */
+    function choreoRoute() {
+      const run = Math.min(width * CHOREO_RUN_W, height * CHOREO_RUN_H);
+      const lead = run * CHOREO_LEAD_IN;
+      const entryX = Math.min(
+        width * CHOREO_ENTRY_X,
+        width * (1 - CHOREO_RIGHT_MARGIN) - run,
+      );
+      return {
+        origin: { x: entryX - lead, y: -lead },
+        target: { x: entryX + run, y: run },
+        /** Along the path, not along an axis — what `grown` counts. */
+        distance: (run + lead) * Math.SQRT2,
+      };
+    }
+
     /**
      * The scripted arrival: one trace, one route, no dice rolled. It still
      * corners on its own the way every other trace does — the script sets where
      * it comes in and where it's headed, not each segment.
      */
     function spawnChoreoMajor() {
-      const target = {
-        x: width * CHOREO_TARGET.x,
-        y: height * CHOREO_TARGET.y,
-      };
-      // Equal run and rise, so the heading is 45° before snapping and 45° after.
-      const run = target.y + CHOREO_ENTRY_MARGIN;
-      addArm(
-        { x: target.x - run, y: -CHOREO_ENTRY_MARGIN },
-        LATTICE,
-        run * Math.SQRT2 * CHOREO_OVERSHOOT,
-        0,
-        true,
-        0,
-        CHOREO_SPEED_SCALE,
-      );
+      const { origin, distance } = choreoRoute();
+      if (!addArm(origin, LATTICE, distance * CHOREO_OVERSHOOT, 0, true)) return;
+      choreoArm = fissures[fissures.length - 1];
+      // Overrides the random speed createFissure gave it: this is the one trace
+      // on the canvas that has to arrive at a stated time, so its speed comes
+      // out of the distance it has to cover rather than the other way round.
+      choreoArm.speed = distance / (CHOREO_APPROACH_MS / 1000);
     }
 
     function advanceChoreo(deltaMs: number) {
       choreoElapsed += deltaMs;
 
-      // The visitor interrupting outranks the rest of the sequence.
+      // The visitor interrupting outranks the rest of the sequence. It also has
+      // to release the ambient spawner, which the intro parked at Infinity —
+      // otherwise interrupting the intro would leave a field that never moves.
       if (document.documentElement.hasAttribute("data-intro-skip")) {
         choreoStage = 2;
+        choreoArm = null;
+        nextSpawnIn = FIRST_SPAWN_MS;
         return;
       }
 
       if (choreoStage === 0 && choreoElapsed >= CHOREO_MAJOR_MS) {
         spawnChoreoMajor();
         choreoStage = 1;
+        // Nothing was available under the cap, so there is no arrival to wait
+        // for and no impact to show.
+        if (!choreoArm) choreoStage = 2;
+        return;
       }
-      if (choreoStage === 1 && choreoElapsed >= CHOREO_BURST_MS) {
-        spawnBurstAt(
-          width * CHOREO_TARGET.x,
-          height * CHOREO_TARGET.y,
-          170,
-          430,
-        );
-        choreoStage = 2;
-      }
+
+      if (choreoStage !== 1 || !choreoArm) return;
+
+      /* The impact fires when the trace arrives, not on a clock beside it.
+         Timed at a fixed 760ms it went off while the trace was still 50-94% of
+         the way in — the spread being the randomised speed, so the effect
+         preceded its cause by a different margin on every load. Watching the
+         arm instead makes the two the same event, and a trace arrested early by
+         something in its path breaks where it stopped rather than where the
+         script hoped. */
+      const arrived = choreoArm.grown >= choreoRoute().distance;
+      if (!arrived && choreoArm.phase === "growing") return;
+
+      const tip = choreoArm.points[choreoArm.points.length - 1];
+      spawnBurstAt(tip.x, tip.y, 170, 430);
+      choreoStage = 2;
+      choreoArm = null;
+      // Ambient work resumes from here, so the scripted trace and its impact are
+      // the only things that ever shared the opening seconds.
+      nextSpawnIn = FIRST_SPAWN_MS;
     }
 
     /**

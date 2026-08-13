@@ -61,7 +61,9 @@ export default async function Home({
           flag is written before the class, so a reload during the intro counts
           as having seen it. The three listeners are what makes the sequence
           interruptible; they clear themselves once it can no longer be
-          interrupted.
+          interrupted — which is after the last word has landed, not before. At
+          1400ms they outlived the sequence they were watching by less than they
+          were cut short by it, and a click in the final 400ms did nothing.
 
           Inline, and therefore leaning on the CSP's documented 'unsafe-inline'
           for scripts — the same trade-off the RSC payload already needs. */}
@@ -78,7 +80,7 @@ var s=function(){r.setAttribute("data-intro-skip","");d()};
 addEventListener("pointerdown",s,{passive:true});
 addEventListener("keydown",s);
 addEventListener("wheel",s,{passive:true});
-setTimeout(d,1400);
+setTimeout(d,1900);
 }catch(e){}})();`,
         }}
       />
