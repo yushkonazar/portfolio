@@ -6,7 +6,8 @@
   },
   "Header": {
     "home": "Yushko Nazar — home",
-    "github": "GitHub profile"
+    "github": "GitHub profile",
+    "language": "Language"
   },
   "Services": {
     "caption": "One person, the whole build",
