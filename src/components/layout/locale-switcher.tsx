@@ -6,6 +6,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { GlobeIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { HEADER_CONTROL, HEADER_ICON } from "./control-styles";
 
 /**
  * Each language named in itself, which is the one rule a language list has: a
@@ -88,6 +89,12 @@ export function LocaleSwitcher() {
       onBlur={onBlur}
       className="relative"
     >
+      {/* The same box as the GitHub mark beside it, from the same constant, so
+          the pair reads as one set and cannot drift apart. That makes it
+          icon-only: the locale code it used to show is the one thing lost, and
+          it is carried by the label for assistive tech, by the marked option in
+          the list, and — for anyone who can see the page at all — by the language
+          the page is written in. */}
       <button
         ref={trigger}
         type="button"
@@ -95,15 +102,9 @@ export function LocaleSwitcher() {
         aria-expanded={open}
         aria-controls="locale-list"
         aria-label={`${t("language")}: ${NATIVE[locale as Locale]}`}
-        className={cn(
-          "focus-visible:outline-accent-bright flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[11px] leading-none tracking-[0.1em] uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
-          open
-            ? "border-accent/45 text-accent-bright"
-            : "text-muted-foreground hover:text-foreground border-white/[0.12] hover:border-white/25",
-        )}
+        className={cn(HEADER_CONTROL, open && "text-accent-bright")}
       >
-        <GlobeIcon className="h-[13px] w-[13px]" />
-        {locale}
+        <GlobeIcon className={HEADER_ICON} />
       </button>
 
       {/* Kept out of the DOM while closed rather than hidden: there is nothing

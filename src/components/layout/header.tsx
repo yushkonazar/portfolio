@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { GitHubIcon } from "@/components/icons";
+import { HEADER_CONTROL, HEADER_ICON } from "./control-styles";
 import { LocaleSwitcher } from "./locale-switcher";
 
 // A monogram rather than the full name: on the home page the wordmark sat
@@ -25,15 +26,17 @@ export async function Header() {
           YN
         </Link>
 
-        <div className="flex items-center gap-1.5">
+        {/* gap-2, not gap-1.5: 6px between two adjacent targets is under the 8px
+            that keeps a tap from landing on the wrong one. */}
+        <div className="flex items-center gap-2">
           <a
             href="https://github.com/yushkonazar"
             target="_blank"
             rel="noreferrer"
             aria-label={t("github")}
-            className="text-muted-foreground hover:text-accent-bright focus-visible:outline-accent-bright rounded px-2 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className={HEADER_CONTROL}
           >
-            <GitHubIcon className="h-[15px] w-[15px]" />
+            <GitHubIcon className={HEADER_ICON} />
           </a>
           <LocaleSwitcher />
         </div>

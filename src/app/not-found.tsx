@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
-import { CodeDebris } from "@/components/code-debris";
+import { CodeDebris, CodeNumeral } from "@/components/code-debris";
 import { PageTexture } from "@/components/page-texture";
 import { SiteBackground } from "@/components/site-background";
 import { manrope } from "./fonts";
@@ -92,16 +92,15 @@ export default function NotFound() {
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "radial-gradient(ellipse 42% 34% at 50% 50%, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.55) 52%, rgba(5,5,5,0) 82%)",
+                  "radial-gradient(ellipse 48% 38% at 50% 50%, rgba(5,5,5,0.9) 0%, rgba(5,5,5,0.55) 52%, rgba(5,5,5,0) 82%)",
               }}
             />
 
-            <p
-              className="relative font-mono text-[96px] leading-none font-bold tracking-[-0.06em] sm:text-[132px]"
-              style={{ fontFamily: "var(--font-jetbrains-mono), ui-monospace, monospace" }}
-            >
-              404
-            </p>
+            {/* The number is a dot matrix of code tokens, not a glyph — see
+                CodeNumeral. `--cell` is the one dial for its size, and `role=img`
+                with a label is what keeps it a "404" to a screen reader instead
+                of sixteen unrelated fragments of syntax. */}
+            <CodeNumeral className="relative [--cell:15px] sm:[--cell:21px]" />
           </div>
 
           {/* Pulled up into the bottom of the cloud, the way the sentence sits

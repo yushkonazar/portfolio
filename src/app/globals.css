@@ -292,6 +292,12 @@
   .locale-cycle > *,
   .locale-cycle-inline > * {
     grid-area: 1 / 1;
+    /* Each face fills a cell sized to the longest of them, so a shorter one
+       inherits `start` and sits left of where the control is centred — measured,
+       "До проєктів" landed 14px left of its button's middle while "See the
+       projects" defined the cell. Reserving the width is what stops the button
+       resizing mid-cycle; centring in it is the other half of that. */
+    text-align: center;
     animation: locale-cycle 6s ease-in-out infinite;
   }
 
