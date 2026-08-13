@@ -45,7 +45,10 @@ export default function NotFound() {
         <PageTexture />
         <SiteBackground />
 
-        <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-20">
+        {/* py-14, not py-20: the block grew when the words moved out from under
+            the artwork, and this page should fit a laptop viewport without
+            scrolling to reach its own buttons. */}
+        <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-14">
           {/* The artwork's own box, clipping it. `overflow-hidden` has to be here:
               the image is wider than this on purpose, so the cloud reads as
               continuing past the frame, and with nothing clipping it the page
@@ -83,9 +86,14 @@ export default function NotFound() {
             />
           </div>
 
-          {/* Pulled up into the bottom of the cloud, the way the sentence sits
-              inside the spread rather than under it. */}
-          <div className="locale-cycle relative -mt-6 text-center sm:-mt-8">
+          {/* Clear of the artwork rather than overlapping into it. It used to be
+              pulled up by a negative margin so the sentence sat inside the
+              spread; below it, the picture is a picture and the words are words.
+              Nothing is lost by uncovering the artwork's lower edge: the field
+              clips 18.5% off each end of the image, and only 2.8% of its ink
+              lives out there, so the cut runs through the fade rather than
+              through the cloud. */}
+          <div className="locale-cycle relative mt-6 text-center sm:mt-8">
             <div>
               <h1 className="text-base font-medium md:text-lg">
                 This page cracked off somewhere.
