@@ -174,7 +174,15 @@ export function ProjectRow({
       onBlur={onBlur}
       onKeyDown={onKeyDown}
       className={cn(
-        "grid cursor-pointer border-t border-white/[0.12] py-4 transition-[grid-template-rows] duration-[560ms] ease-[cubic-bezier(.4,.05,.2,1)] motion-reduce:transition-none md:py-[18px]",
+        // `grid-cols-[minmax(0,1fr)]` is load-bearing, not tidiness. An implicit
+        // column is `auto`, which means max-content, and this row's max-content
+        // is its title plus its status pill plus the *untruncated* one-liner plus
+        // the arrow. Measured at 768px: the grid box was 665px wide while its own
+        // column computed to 730px, so the row overflowed the page and an iPad in
+        // portrait scrolled sideways by 21px. The one-liner has `min-w-0` and
+        // `flex-basis: 0` and truncates — but only against a definite width, and
+        // a max-content column never gives it one.
+        "grid cursor-pointer grid-cols-[minmax(0,1fr)] border-t border-white/[0.12] py-4 transition-[grid-template-rows] duration-[560ms] ease-[cubic-bezier(.4,.05,.2,1)] motion-reduce:transition-none md:py-[18px]",
         open ? "grid-rows-[auto_1fr]" : "grid-rows-[auto_0fr]",
         last && "border-b border-white/[0.12]",
       )}

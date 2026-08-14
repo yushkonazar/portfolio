@@ -198,6 +198,10 @@ export function QrPanel({
         </span>
       </div>
 
+      {/* The three controls below grow on coarse pointers only. 26px reads well
+          under a cursor and badly under a thumb, but growing them everywhere
+          would cost this panel width it hasn't got — it overflowed by 8px once
+          already. So: bigger where it's tapped, unchanged where it's clicked. */}
       <div className="order-2 flex items-end gap-[9px]">
         <input
           type="text"
@@ -218,14 +222,14 @@ export function QrPanel({
           autoComplete="off"
           autoCapitalize="off"
           inputMode="url"
-          className="caret-accent-bright focus:border-b-accent h-[26px] min-w-0 flex-1 border-0 border-b border-white/[0.16] bg-transparent px-0 pb-[7px] font-mono text-[10.5px] leading-none text-white/[0.88] outline-none placeholder:text-white/[0.22]"
+          className="caret-accent-bright focus:border-b-accent h-[26px] pointer-coarse:h-[38px] min-w-0 flex-1 border-0 border-b border-white/[0.16] bg-transparent px-0 pb-[7px] font-mono text-[10.5px] leading-none text-white/[0.88] outline-none placeholder:text-white/[0.22]"
         />
         <span className="relative flex-none">
           <button
             type="button"
             onClick={print}
             aria-label={stale || !code ? t("qrPrint") : t("qrReprint")}
-            className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[12px] leading-none transition-colors outline-none"
+            className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-[26px] w-[26px] pointer-coarse:h-[38px] pointer-coarse:w-[38px] cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[12px] leading-none transition-colors outline-none"
           >
             ↵
           </button>
@@ -279,7 +283,7 @@ export function QrPanel({
           onClick={onFlipBack}
           aria-label={t("flipBack")}
           title={t("flipBack")}
-          className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[11px] leading-none transition-colors outline-none"
+          className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-5 w-5 pointer-coarse:h-8 pointer-coarse:w-8 shrink-0 cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[11px] leading-none transition-colors outline-none"
         >
           ↺
         </button>
