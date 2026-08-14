@@ -63,7 +63,7 @@ export function Hero({
           the rest. `svh` and not `vh` because `vh` on a phone means the viewport
           with the browser's chrome hidden, which is not the viewport anyone
           starts with. The subtraction is the header. */}
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start justify-center gap-8 px-6 pt-8 pb-10 md:min-h-0 md:flex-row md:items-end md:justify-start md:gap-10 md:px-11 md:pt-9 md:pb-11 min-h-[calc(100svh-4.625rem)]">
+      <div className="relative mx-auto flex min-h-[calc(100svh-4.625rem)] w-full max-w-5xl flex-row items-start justify-center gap-4 px-6 pt-8 pb-10 md:min-h-0 md:items-end md:justify-start md:gap-10 md:px-11 md:pt-9 md:pb-11">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
             <span className="text-accent-bright flex min-w-0 items-center gap-2 font-mono text-[0.6875rem] tracking-[0.16em] uppercase">

@@ -248,6 +248,32 @@ export function PortraitCard({ name }: { name: string }) {
     field?.select();
   }, [flipped]);
 
+  /**
+   * Turns the card back over if the viewport drops below the width that can hold
+   * its back.
+   *
+   * The flip plate is hidden below `md`, so there is no way *in* down there, but
+   * nothing undid a flip that had already happened: a browser dragged across 768
+   * while turned lands on a 146px-wide QR panel. Escapable — the back's own footer
+   * control is not gated by width — but not worth showing in the first place.
+   *
+   * Only ever turns towards the front, and only from a back that is already
+   * facing, so it cannot fight a deliberate flip.
+   *
+   * Unverified in the browser I test in: `matchMedia` change events do not fire
+   * there, along with `ResizeObserver`, `IntersectionObserver` and
+   * `requestAnimationFrame`. The four lines are what they look like.
+   */
+  useEffect(() => {
+    const wide = window.matchMedia("(width >= 48rem)");
+    const onChange = () => {
+      if (wide.matches || !flippedRef.current) return;
+      toggleFlip();
+    };
+    wide.addEventListener("change", onChange);
+    return () => wide.removeEventListener("change", onChange);
+  });
+
   function toggleFlip() {
     flipAsked.current = true;
     // The tilt eases out of the way rather than being cut to zero — a tilt
@@ -315,7 +341,7 @@ export function PortraitCard({ name }: { name: string }) {
                the ticket is 252 — a quarter more code for the same card. The
                headline keeps 37px of headroom in the column that leaves, measured
                at 768 where that column is narrowest. */
-            className="portrait-drift block h-[280px] w-auto md:h-[450px]" 
+            className="portrait-drift block h-[210px] w-auto md:h-[450px]" 
             />
 
             {/* Sinks the photograph's own edges so it reads as printed into
@@ -396,7 +422,14 @@ export function PortraitCard({ name }: { name: string }) {
             which has nothing else to click. It goes inert while the card is
             turned, because from there the back's own footer button is what
             flips it and two competing controls would just fight for the tab
-            stop. */}
+            stop.
+
+            Absent below `md`, which is what keeps the QR panel off a phone. Beside
+            the text at 375px the card is ~140px wide, so that panel would get
+            ~90px for a tool that needs 180 — measured at 194px wide it already
+            squeezed its own ticket from a square into 94x142 and wrapped the
+            privacy note onto two lines. The photograph is the whole card there;
+            the generator waits for a viewport that can hold it. */}
         <button
           ref={plate}
           type="button"
@@ -404,7 +437,7 @@ export function PortraitCard({ name }: { name: string }) {
           aria-pressed={flipped}
           aria-label={t("flip")}
           inert={flipped}
-          className="focus-visible:outline-accent-bright absolute inset-0 z-10 cursor-pointer rounded-[18px] focus-visible:outline-2 focus-visible:outline-offset-4"
+          className="focus-visible:outline-accent-bright absolute inset-0 z-10 hidden cursor-pointer rounded-[18px] focus-visible:outline-2 focus-visible:outline-offset-4 md:block"
         />
       </div>
     </div>
