@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { PageTexture } from "@/components/page-texture";
+import { TypeSizeScript } from "@/components/layout/type-size";
 import { SiteBackground } from "@/components/site-background";
 import { manrope } from "./fonts";
 import "./globals.css";
@@ -40,6 +41,9 @@ export default function NotFound() {
   return (
     <html lang="en" className={manrope.variable}>
       <body>
+        {/* This document is outside the [locale] segment and has its own <html>,
+            so it needs its own copy of the size script or it ignores the choice. */}
+        <TypeSizeScript />
         {/* Texture first, then the traces over it — the same order the locale
             layout stacks them in. */}
         <PageTexture />

@@ -27,7 +27,7 @@ export async function Services() {
     // page scrolls past this section.
     <section className="border-border/40 border-y bg-white/[0.012]">
       <div className="mx-auto w-full max-w-5xl px-6 pt-3 md:px-11">
-        <h2 className="text-muted-foreground m-0 font-mono text-[10px] font-normal tracking-[0.16em] uppercase">
+        <h2 className="text-muted-foreground m-0 font-mono text-[0.625rem] font-normal tracking-[0.16em] uppercase">
           {t("caption")}
         </h2>
       </div>
@@ -44,10 +44,10 @@ export async function Services() {
               index === items.length - 1 && "md:pr-11",
             )}
           >
-            <h3 className="m-0 text-[17px] leading-[1.25] font-bold tracking-[-0.02em] text-balance md:text-[18px]">
+            <h3 className="m-0 text-[1.0625rem] leading-[1.25] font-bold tracking-[-0.02em] text-balance md:text-[1.125rem]">
               {item.title}
             </h3>
-            <p className="text-muted-foreground mt-2 m-0 text-[13.5px] leading-relaxed text-pretty md:text-sm">
+            <p className="text-muted-foreground mt-2 m-0 text-[0.84375rem] leading-relaxed text-pretty md:text-sm">
               {item.body}
             </p>
           </Reveal>

@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* ── Reader-set type size ─────────────────────────────────────────────────────
+   Percentages of the browser's own default, never absolute values, so this
+   composes with whatever the reader already set instead of overriding it: a
+   visitor running 20px gets 22.5px at "large", not 18px.
+
+   It scales the layout with the type, which is deliberate. Tailwind's spacing
+   scale is rem, so boxes grow with the words inside them and nothing is left
+   holding text it no longer fits. The five fixed pixel heights that did hold
+   text — the two call-to-action buttons and the QR panel's field and control —
+   were converted to rem for the same reason, along with all 65 type sizes that
+   were stated in px and would otherwise have sat still while everything moved
+   around them.
+
+   No attribute means the default, which is also what a reader with JavaScript
+   off gets. */
+html[data-type="large"] {
+  font-size: 112.5%;
+}
+
+html[data-type="larger"] {
+  font-size: 125%;
+}
+
 @theme {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 

@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { GitHubIcon } from "@/components/icons";
 import { HEADER_CONTROL, HEADER_ICON } from "./control-styles";
 import { LocaleSwitcher } from "./locale-switcher";
+import { TypeSize } from "./type-size";
 
 // A monogram rather than the full name: on the home page the wordmark sat
 // directly above the same name at 86px, which read as a duplication. Work and
@@ -21,7 +22,7 @@ export async function Header() {
         <Link
           href="/"
           aria-label={t("home")}
-          className="border-accent/40 hover:border-accent hover:text-accent-bright focus-visible:outline-accent-bright -ml-[9px] rounded-md border px-2 py-1 font-mono text-[13px] font-bold tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="border-accent/40 hover:border-accent hover:text-accent-bright focus-visible:outline-accent-bright -ml-[9px] rounded-md border px-2 py-1 font-mono text-[0.8125rem] font-bold tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           YN
         </Link>
@@ -38,6 +39,7 @@ export async function Header() {
           >
             <GitHubIcon className={HEADER_ICON} />
           </a>
+          <TypeSize />
           <LocaleSwitcher />
         </div>
       </div>

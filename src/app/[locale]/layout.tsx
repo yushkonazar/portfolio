@@ -7,6 +7,7 @@ import { routing } from "@/i18n/routing";
 import { manrope } from "../fonts";
 import { PageTexture } from "@/components/page-texture";
 import { Terminal } from "@/components/terminal";
+import { TypeSizeScript } from "@/components/layout/type-size";
 import "../globals.css";
 
 const SITE_URL = "https://yushko.dev";
@@ -82,6 +83,9 @@ export default async function LocaleLayout({
     // `lang` and the font class, neither of which varies.
     <html lang={locale} className={manrope.variable} suppressHydrationWarning>
       <body>
+        {/* First thing in the body, so a reader who chose a larger size never
+            sees the page at the default and then watches it jump. */}
+        <TypeSizeScript />
         {/* Before the content div so it lands under z-10, and under the trace
             canvas too — page colour, surface, traces, content. */}
         <PageTexture />

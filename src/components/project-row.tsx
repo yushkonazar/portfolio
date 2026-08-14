@@ -223,7 +223,7 @@ export function ProjectRow({
       >
         <span
           className={cn(
-            "shrink-0 text-[19px] font-bold tracking-[-0.02em] transition-colors duration-300 md:text-[26px]",
+            "shrink-0 text-[1.1875rem] font-bold tracking-[-0.02em] transition-colors duration-300 md:text-[1.625rem]",
             open && "text-accent-bright",
           )}
         >
@@ -231,7 +231,7 @@ export function ProjectRow({
         </span>
         <span
           className={cn(
-            "shrink-0 rounded-[5px] px-2 py-[3px] font-mono text-[10px] leading-[1.5] tracking-[0.06em] md:text-[10.5px]",
+            "shrink-0 rounded-[5px] px-2 py-[3px] font-mono text-[0.625rem] leading-[1.5] tracking-[0.06em] md:text-[0.65625rem]",
             statusTone === "live"
               ? "bg-emerald-500/12 text-emerald-400"
               : "bg-accent/15 text-accent-bright",
@@ -239,7 +239,7 @@ export function ProjectRow({
         >
           {status}
         </span>
-        <span className="text-muted-foreground hidden min-w-0 flex-1 truncate text-[14.5px] md:block">
+        <span className="text-muted-foreground hidden min-w-0 flex-1 truncate text-[0.90625rem] md:block">
           {short}
         </span>
         {/* Pointing down once the panel is out, so "open" is legible from the
@@ -304,18 +304,18 @@ export function ProjectRow({
             )
           ) : (
             <div className="placeholder-hatch flex h-[150px] w-full shrink-0 items-center justify-center rounded-[10px] border border-white/[0.12] text-center md:h-[184px] md:w-[340px]">
-              <span className="text-muted-foreground max-w-[200px] font-mono text-[11px] leading-[1.5]">
+              <span className="text-muted-foreground max-w-[200px] font-mono text-[0.6875rem] leading-[1.5]">
                 {screenshotPlaceholder}
               </span>
             </div>
           )}
 
           <div className="flex min-w-0 flex-1 flex-col gap-[10px]">
-            <p className="text-muted-foreground m-0 text-sm leading-relaxed text-pretty md:text-[14.5px]">
+            <p className="text-muted-foreground m-0 text-sm leading-relaxed text-pretty md:text-[0.90625rem]">
               {description}
             </p>
 
-            <div className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 text-[13px] md:text-[13.5px]">
+            <div className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 text-[0.8125rem] md:text-[0.84375rem]">
               {metrics.map((metric) => (
                 <span key={metric.value + metric.label}>
                   <b className="text-foreground font-bold">
@@ -330,7 +330,7 @@ export function ProjectRow({
               {stack.map((item) => (
                 <span
                   key={item}
-                  className="text-muted-foreground rounded-[5px] border border-white/[0.14] px-2 py-1 font-mono text-[11px] leading-none"
+                  className="text-muted-foreground rounded-[5px] border border-white/[0.14] px-2 py-1 font-mono text-[0.6875rem] leading-none"
                 >
                   {item}
                 </span>
@@ -345,7 +345,7 @@ export function ProjectRow({
                 const label = (
                   <span
                     className={cn(
-                      "border-b pb-px text-[13.5px] font-bold transition-colors",
+                      "border-b pb-px text-[0.84375rem] font-bold transition-colors",
                       link.accent
                         ? "text-accent-bright border-accent-bright/35 group-hover:border-accent-bright"
                         : "border-white/25 group-hover:border-white",
@@ -384,7 +384,7 @@ export function ProjectRow({
                 );
               })}
               {note && (
-                <span className="text-muted-foreground font-mono text-[11.5px]">
+                <span className="text-muted-foreground font-mono text-[0.71875rem]">
                   {note}
                 </span>
               )}

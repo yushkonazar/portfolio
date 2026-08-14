@@ -79,7 +79,7 @@ export function BurstHint() {
     // appearing unasked in a live region would only interrupt.
     <span
       aria-hidden
-      className="burst-hint text-accent-bright pointer-events-none fixed z-40 font-mono text-[11px] tracking-[0.08em] whitespace-nowrap"
+      className="burst-hint text-accent-bright pointer-events-none fixed z-40 font-mono text-[0.6875rem] tracking-[0.08em] whitespace-nowrap"
       style={{ left: at.x + 16, top: at.y + 18 }}
     >
       {t("burstHint")} ✦

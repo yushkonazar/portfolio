@@ -126,7 +126,7 @@ export function LocaleSwitcher() {
                 onClick={() => choose(loc)}
                 aria-current={current ? "true" : undefined}
                 className={cn(
-                  "focus-visible:outline-accent-bright flex w-full cursor-pointer items-center gap-2 px-3 py-[7px] text-left text-[13px] transition-colors focus-visible:-outline-offset-2 focus-visible:outline-2",
+                  "focus-visible:outline-accent-bright flex w-full cursor-pointer items-center gap-2 px-3 py-[7px] text-left text-[0.8125rem] transition-colors focus-visible:-outline-offset-2 focus-visible:outline-2",
                   current
                     ? "text-accent-bright"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]",
@@ -140,7 +140,7 @@ export function LocaleSwitcher() {
                 {NATIVE[loc]}
                 <span
                   aria-hidden
-                  className="ml-auto font-mono text-[10px] tracking-[0.1em] uppercase opacity-45"
+                  className="ml-auto font-mono text-[0.625rem] tracking-[0.1em] uppercase opacity-45"
                 >
                   {loc}
                 </span>

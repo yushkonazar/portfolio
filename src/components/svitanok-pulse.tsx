@@ -93,7 +93,7 @@ export function SvitanokPulse() {
   }).format(sentAt);
 
   return (
-    <p className="text-muted-foreground mt-2 flex items-center gap-2 font-mono text-[11.5px] leading-[1.5]">
+    <p className="text-muted-foreground mt-2 flex items-center gap-2 font-mono text-[0.71875rem] leading-[1.5]">
       <span
         aria-hidden
         className="bg-accent-bright ember-pulse h-1.5 w-1.5 shrink-0 rounded-full"

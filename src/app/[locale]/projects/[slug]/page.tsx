@@ -243,7 +243,7 @@ export default async function ProjectPage({
                 href={`/projects/${previous.slug}`}
                 className="border-border hover:border-accent focus-visible:outline-accent-bright group rounded-lg border px-4 py-3 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                <span className="text-muted-foreground block font-mono text-[11px] tracking-[0.1em] uppercase">
+                <span className="text-muted-foreground block font-mono text-[0.6875rem] tracking-[0.1em] uppercase">
                   ← {t("previousProject")}
                 </span>
                 <span className="group-hover:text-accent-bright mt-1 block font-medium transition-colors">
@@ -256,7 +256,7 @@ export default async function ProjectPage({
                 href={`/projects/${next.slug}`}
                 className="border-border hover:border-accent focus-visible:outline-accent-bright group rounded-lg border px-4 py-3 text-right transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:ml-auto"
               >
-                <span className="text-muted-foreground block font-mono text-[11px] tracking-[0.1em] uppercase">
+                <span className="text-muted-foreground block font-mono text-[0.6875rem] tracking-[0.1em] uppercase">
                   {t("nextProject")} →
                 </span>
                 <span className="group-hover:text-accent-bright mt-1 block font-medium transition-colors">
@@ -268,7 +268,7 @@ export default async function ProjectPage({
 
           <Link
             href="/#contact"
-            className="text-accent-bright focus-visible:outline-accent-bright border-accent-bright/35 hover:border-accent-bright mt-10 inline-block border-b pb-px text-[15px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="text-accent-bright focus-visible:outline-accent-bright border-accent-bright/35 hover:border-accent-bright mt-10 inline-block border-b pb-px text-[0.9375rem] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             {t("caseCta")} <span aria-hidden>→</span>
           </Link>

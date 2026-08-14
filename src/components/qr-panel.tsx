@@ -190,10 +190,10 @@ export function QrPanel({
     <div className="relative z-1 flex h-full flex-col gap-2.5">
       {/* Header: monogram, and what the printed code actually is. */}
       <div className="order-0 flex h-[14px] items-center">
-        <span className="text-accent-bright font-mono text-[15px] font-bold tracking-[0.16em]">
+        <span className="text-accent-bright font-mono text-[0.9375rem] font-bold tracking-[0.16em]">
           YN
         </span>
-        <span className="ml-auto font-mono text-[9px] leading-none tracking-[0.1em] text-white/[0.26]">
+        <span className="ml-auto font-mono text-[0.5625rem] leading-none tracking-[0.1em] text-white/[0.26]">
           {code ? `${code.size}×${code.size} · ${code.level}` : ""}
         </span>
       </div>
@@ -222,14 +222,14 @@ export function QrPanel({
           autoComplete="off"
           autoCapitalize="off"
           inputMode="url"
-          className="caret-accent-bright focus:border-b-accent h-[26px] pointer-coarse:h-[38px] min-w-0 flex-1 border-0 border-b border-white/[0.16] bg-transparent px-0 pb-[7px] font-mono text-[10.5px] leading-none text-white/[0.88] outline-none placeholder:text-white/[0.22]"
+          className="caret-accent-bright focus:border-b-accent h-[26px] pointer-coarse:h-[2.375rem] min-w-0 flex-1 border-0 border-b border-white/[0.16] bg-transparent px-0 pb-[7px] font-mono text-[0.65625rem] leading-none text-white/[0.88] outline-none placeholder:text-white/[0.22]"
         />
         <span className="relative flex-none">
           <button
             type="button"
             onClick={print}
             aria-label={stale || !code ? t("qrPrint") : t("qrReprint")}
-            className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-[26px] w-[26px] pointer-coarse:h-[38px] pointer-coarse:w-[38px] cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[12px] leading-none transition-colors outline-none"
+            className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-[26px] w-[26px] pointer-coarse:h-[2.375rem] pointer-coarse:w-[2.375rem] cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[0.75rem] leading-none transition-colors outline-none"
           >
             ↵
           </button>
@@ -245,7 +245,7 @@ export function QrPanel({
       <div
         aria-live="polite"
         className={cn(
-          "order-3 -mt-1 min-h-[12px] font-mono text-[9.5px] leading-[1.25] tracking-[0.02em]",
+          "order-3 -mt-1 min-h-[12px] font-mono text-[0.59375rem] leading-[1.25] tracking-[0.02em]",
           failure ? "text-accent-bright/80" : "text-white/30",
         )}
       >
@@ -270,7 +270,7 @@ export function QrPanel({
       />
 
       <div className="order-4 mt-auto flex items-center justify-between gap-3">
-        <span className="font-mono text-[9px] leading-none text-white/20">
+        <span className="font-mono text-[0.5625rem] leading-none text-white/20">
           {t("qrPrivacy")}
         </span>
         {/* A drawn button rather than 9px of grey text, and paired with the
@@ -283,7 +283,7 @@ export function QrPanel({
           onClick={onFlipBack}
           aria-label={t("flipBack")}
           title={t("flipBack")}
-          className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-5 w-5 pointer-coarse:h-8 pointer-coarse:w-8 shrink-0 cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[11px] leading-none transition-colors outline-none"
+          className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-5 w-5 pointer-coarse:h-8 pointer-coarse:w-8 shrink-0 cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[0.6875rem] leading-none transition-colors outline-none"
         >
           ↺
         </button>
@@ -600,7 +600,7 @@ function OverlayHalf(
     <>
       <span
         aria-hidden
-        className="text-accent-bright flex h-[30px] w-[30px] items-center justify-center rounded-full border border-[rgba(245,158,11,.4)] font-mono text-[14px] leading-none"
+        className="text-accent-bright flex h-[30px] w-[30px] items-center justify-center rounded-full border border-[rgba(245,158,11,.4)] font-mono text-[0.875rem] leading-none"
       >
         {glyph}
       </span>
@@ -615,7 +615,7 @@ function OverlayHalf(
     // out as "↗ Open" — or, in the accessibility tree, as nothing at all.
     "aria-label": label,
     className:
-      "flex cursor-pointer flex-col items-center justify-center gap-[9px] text-[11.5px] leading-none font-medium tracking-[0.01em] no-underline outline-none",
+      "flex cursor-pointer flex-col items-center justify-center gap-[9px] text-[0.71875rem] leading-none font-medium tracking-[0.01em] no-underline outline-none",
     onMouseEnter: () => setLit(true),
     onMouseLeave: () => setLit(false),
     onFocus: () => setLit(true),

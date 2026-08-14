@@ -70,7 +70,7 @@ export function Hero({
               loading="lazy"
               className="h-11 w-11 shrink-0 rounded-full border border-white/15 md:hidden"
             />
-            <span className="text-accent-bright flex min-w-0 items-center gap-2 font-mono text-[11px] tracking-[0.16em] uppercase">
+            <span className="text-accent-bright flex min-w-0 items-center gap-2 font-mono text-[0.6875rem] tracking-[0.16em] uppercase">
               <span className="bg-accent-bright ember-pulse h-1.5 w-1.5 rounded-full" />
               {availability}
             </span>
@@ -82,7 +82,7 @@ export function Hero({
               the spans step out of the way. */}
           <h1
             aria-label={name}
-            className="mt-4 text-[44px] leading-[0.98] font-extrabold tracking-[-0.035em] md:text-[86px] md:leading-[0.94] md:tracking-[-0.04em]"
+            className="mt-4 text-[2.75rem] leading-[0.98] font-extrabold tracking-[-0.035em] md:text-[5.375rem] md:leading-[0.94] md:tracking-[-0.04em]"
           >
             {name.split(" ").map((word, index) => (
               <span
@@ -100,13 +100,13 @@ export function Hero({
               far, in order, so the whole block arrives instead of one line of
               it. `--lift` is their place in the queue. */}
           <p
-            className="intro-lift mt-4 text-base font-medium md:mt-[18px] md:text-[19px]"
+            className="intro-lift mt-4 text-base font-medium md:mt-[18px] md:text-[1.1875rem]"
             style={{ "--lift": 0 } as CSSProperties}
           >
             {role}
           </p>
           <p
-            className="intro-lift text-muted-foreground mt-2 max-w-[500px] text-sm leading-relaxed text-pretty md:text-[15px]"
+            className="intro-lift text-muted-foreground mt-2 max-w-[500px] text-sm leading-relaxed text-pretty md:text-[0.9375rem]"
             style={{ "--lift": 1 } as CSSProperties}
           >
             {intro}
@@ -118,7 +118,7 @@ export function Hero({
           >
             <a
               href="#contact"
-              className="bg-accent text-accent-foreground hover:bg-accent-bright focus-visible:outline-accent-bright flex h-12 items-center justify-center rounded-lg px-6 text-[14.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-[46px]"
+              className="bg-accent text-accent-foreground hover:bg-accent-bright focus-visible:outline-accent-bright flex h-12 items-center justify-center rounded-lg px-6 text-[0.90625rem] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-[2.875rem]"
             >
               {ctaContact}
             </a>
@@ -127,11 +127,11 @@ export function Hero({
                 spliced into the href by hand. */}
             <Link
               href="/resume"
-              className="border-border hover:border-muted-foreground focus-visible:outline-accent-bright flex h-12 items-center justify-center rounded-lg border px-5 text-[14.5px] font-semibold transition-colors hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-[46px]"
+              className="border-border hover:border-muted-foreground focus-visible:outline-accent-bright flex h-12 items-center justify-center rounded-lg border px-5 text-[0.90625rem] font-semibold transition-colors hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-[2.875rem]"
             >
               {ctaResume}
             </Link>
-            <span className="text-muted-foreground hidden font-mono text-[11.5px] leading-[1.5] whitespace-pre-line sm:block">
+            <span className="text-muted-foreground hidden font-mono text-[0.71875rem] leading-[1.5] whitespace-pre-line sm:block">
               {replyNote}
             </span>
           </div>

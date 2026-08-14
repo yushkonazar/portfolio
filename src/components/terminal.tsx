@@ -522,9 +522,9 @@ export function Terminal() {
         aria-modal="true"
         aria-label="Terminal"
         onKeyDown={onDialogKeyDown}
-        className="fixed inset-x-0 bottom-0 z-50 flex h-[60vh] flex-col border-t border-white/[0.16] bg-[#0a0a0a] font-mono text-[13px] shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)]"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-[60vh] flex-col border-t border-white/[0.16] bg-[#0a0a0a] font-mono text-[0.8125rem] shadow-[0_-24px_60px_-20px_rgba(0,0,0,0.9)]"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-2 text-[10.5px] tracking-[0.14em] text-white/40 uppercase">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-2 text-[0.65625rem] tracking-[0.14em] text-white/40 uppercase">
           <span>terminal</span>
           <span aria-hidden>esc to close</span>
         </div>
@@ -580,7 +580,7 @@ export function Terminal() {
                   type="button"
                   tabIndex={-1}
                   onClick={() => accept(hit)}
-                  className="hover:border-accent/50 hover:bg-accent/[0.12] pointer-events-auto cursor-pointer rounded border border-white/[0.14] bg-[#0f0f0f] px-1.5 py-[3px] text-[11.5px] leading-none transition-colors"
+                  className="hover:border-accent/50 hover:bg-accent/[0.12] pointer-events-auto cursor-pointer rounded border border-white/[0.14] bg-[#0f0f0f] px-1.5 py-[3px] text-[0.71875rem] leading-none transition-colors"
                 >
                   {/* The part already on the line, then the part Tab would add —
                       so the list shows what completing does, not just what

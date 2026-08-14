@@ -133,10 +133,10 @@ export function WorkShowcase({
         className="mx-auto w-full max-w-5xl px-6 py-8 md:px-11 md:py-9"
       >
         <Reveal className="flex items-baseline justify-between">
-          <h2 className="m-0 text-[15px] font-bold tracking-[0.02em]">
+          <h2 className="m-0 text-[0.9375rem] font-bold tracking-[0.02em]">
             {heading}
           </h2>
-          <span className="text-muted-foreground font-mono text-[11px] md:text-[11.5px]">
+          <span className="text-muted-foreground font-mono text-[0.6875rem] md:text-[0.71875rem]">
             {hint}
           </span>
         </Reveal>

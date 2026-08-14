@@ -31,6 +31,30 @@ export function GlobeIcon({ className }: IconProps) {
   );
 }
 
+/**
+ * Text size. One letterform in strokes, at the globe's weight so the two read as
+ * a set — the pair of large-and-small A's this convention usually uses collapses
+ * into mush at the 15px these controls draw at, and the button's own label says
+ * what the letter is for.
+ */
+export function TypeSizeIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M4.5 20 12 4.5 19.5 20" />
+      <path d="M7.9 14.2h8.2" />
+    </svg>
+  );
+}
+
 export function MailIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>

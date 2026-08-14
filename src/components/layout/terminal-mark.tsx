@@ -25,7 +25,7 @@ export function TerminalMark() {
       onClick={() => window.dispatchEvent(new Event(TERMINAL_EVENT))}
       title={t("terminalHint")}
       aria-label={t("terminal")}
-      className="focus-visible:outline-accent-bright hover:text-accent-bright hover:border-accent/40 cursor-pointer rounded border border-white/[0.12] px-1.5 py-0.5 font-mono text-[11px] leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+      className="focus-visible:outline-accent-bright hover:text-accent-bright hover:border-accent/40 cursor-pointer rounded border border-white/[0.12] px-1.5 py-0.5 font-mono text-[0.6875rem] leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       {/* Not the accessible name — that's on the button, in the reader's own
           language. This is the shape of a prompt, which is the hint. */}

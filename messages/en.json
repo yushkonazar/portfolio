@@ -7,7 +7,11 @@
   "Header": {
     "home": "Yushko Nazar — home",
     "github": "GitHub profile",
-    "language": "Language"
+    "language": "Language",
+    "typeSize": "Text size",
+    "typeSize_default": "Default",
+    "typeSize_large": "Large",
+    "typeSize_larger": "Larger"
   },
   "Footer": {
     "terminal": "Open the terminal",
