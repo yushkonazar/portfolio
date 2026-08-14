@@ -392,9 +392,29 @@ html[data-type="larger"] {
   }
 
   /* Keeps the fracture animation off the headline. */
+  /* Keeps the fracture animation off the headline.
+
+     The gradient is a desktop measure: it clears the left 56% of the hero because
+     the right 40% is the photograph, and traces are welcome behind a photograph.
+     Below `md` there is no photograph — the text runs the full width, and measured
+     at 375px, 7 of the hero's 11 text runs reach past the 210px where this mask
+     goes fully opaque. The paragraph gets to 92% of the width. So on a phone the
+     mask was protecting nothing and the traces were drawn at full strength across
+     the words.
+
+     Nothing to move them behind, so they step back instead: at a third of their
+     strength they read as the surface the text sits on rather than as marks
+     competing with it. The mask still runs, for the left edge. */
   .hero-crack-mask {
     -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 56%);
     mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 56%);
+    opacity: 0.34;
+  }
+
+  @media (width >= 48rem) {
+    .hero-crack-mask {
+      opacity: 1;
+    }
   }
 
   /* One slow settle on load — the only element in the hero without a state. */
