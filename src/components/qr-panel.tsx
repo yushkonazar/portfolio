@@ -33,6 +33,12 @@ const PRINT_MS = 860;
 const TEAR_MS = 440;
 /** Long enough after the flip that the turn has finished before paper moves. */
 const AUTO_PRINT_MS = 420;
+/**
+ * How long a tapped-open action plate stays up. Long enough to read two words and
+ * reach for one of them, short enough that forgetting about it gives the code
+ * back rather than leaving it covered.
+ */
+const PIN_MS = 3200;
 
 const INK = "#17130f";
 const EYE_INK = "#8a4a08";
@@ -84,9 +90,31 @@ export function QrPanel({
   /** Touch has no hover, so a tap latches the overlay open. */
   const [pinned, setPinned] = useState(false);
 
+  /**
+   * Latching it open needed an unlatch. With no hover to end, a tap put the two
+   * actions over the code and nothing took them away again — the code was behind
+   * them until the card was flipped and flipped back. It now releases itself, and
+   * a tap on the paper still un-pins immediately for anyone who doesn't want to
+   * wait.
+   */
+  const pin = useCallback(() => {
+    if (pinTimer.current !== null) window.clearTimeout(pinTimer.current);
+    setPinned((current) => {
+      if (current) return false;
+      pinTimer.current = window.setTimeout(() => setPinned(false), PIN_MS);
+      return true;
+    });
+  }, []);
+
+  const unpin = useCallback(() => {
+    if (pinTimer.current !== null) window.clearTimeout(pinTimer.current);
+    setPinned(false);
+  }, []);
+
   const printTimer = useRef<number | null>(null);
   const tearTimer = useRef<number | null>(null);
   const autoTimer = useRef<number | null>(null);
+  const pinTimer = useRef<number | null>(null);
 
   /**
    * The field and the printed code are mirrored into refs because `print` runs
@@ -161,7 +189,7 @@ export function QrPanel({
   useEffect(() => {
     autoTimer.current = window.setTimeout(print, AUTO_PRINT_MS);
     return () => {
-      for (const timer of [autoTimer, printTimer, tearTimer]) {
+      for (const timer of [autoTimer, printTimer, tearTimer, pinTimer]) {
         if (timer.current !== null) window.clearTimeout(timer.current);
       }
     };
@@ -266,7 +294,7 @@ export function QrPanel({
         href={href}
         onHoverChange={setHovering}
         onFocusChange={setFocusWithin}
-        onTogglePin={() => setPinned((current) => !current)}
+        onTogglePin={pin}
       />
 
       <div className="order-4 mt-auto flex items-center justify-between gap-3">
@@ -280,7 +308,13 @@ export function QrPanel({
             two together did not fit the column in either language. */}
         <button
           type="button"
-          onClick={onFlipBack}
+          // Puts the plate away on the way out. Without this the pin outlived the
+          // card: flipping back and forth returned to a code still covered by two
+          // actions the reader had already finished with.
+          onClick={() => {
+            unpin();
+            onFlipBack();
+          }}
           aria-label={t("flipBack")}
           title={t("flipBack")}
           className="hover:border-accent-bright/55 hover:bg-accent-bright/10 focus-visible:border-accent-bright text-accent-bright flex h-5 w-5 pointer-coarse:h-8 pointer-coarse:w-8 shrink-0 cursor-pointer items-center justify-center rounded border border-white/[0.16] bg-transparent font-mono text-[0.6875rem] leading-none transition-colors outline-none"

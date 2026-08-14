@@ -44,7 +44,7 @@ export async function Services() {
               index === items.length - 1 && "md:pr-11",
             )}
           >
-            <h3 className="m-0 text-[1.0625rem] leading-[1.25] font-bold tracking-[-0.02em] text-balance md:text-[1.125rem]">
+            <h3 className="m-0 text-[0.9375rem] leading-[1.25] font-bold tracking-[-0.02em] text-balance md:text-[1.125rem]">
               {item.title}
             </h3>
             <p className="text-muted-foreground mt-2 m-0 text-[0.84375rem] leading-relaxed text-pretty md:text-sm">

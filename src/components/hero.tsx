@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { PortraitCard } from "./portrait-card";
 import { SiteBackground } from "./site-background";
@@ -55,21 +54,18 @@ export function Hero({
           The warmth is still here, and now every bit of it has a source: the
           traces, the card's own lit corner, the availability dot and the
           primary button. */}
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start gap-8 px-6 pt-8 pb-10 md:flex-row md:items-end md:gap-10 md:px-11 md:pt-9 md:pb-11">
+      {/* On a phone this fills the viewport, so the first screen is the hero and
+          nothing else. Before, the services block began 289px above the fold and
+          the reader met it while still reading the introduction.
+
+          `min-h` rather than a tuned card height: phones run from 667 to 932
+          points tall, so any fixed figure lands right on one of them and wrong on
+          the rest. `svh` and not `vh` because `vh` on a phone means the viewport
+          with the browser's chrome hidden, which is not the viewport anyone
+          starts with. The subtraction is the header. */}
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col items-start justify-center gap-8 px-6 pt-8 pb-10 md:min-h-0 md:flex-row md:items-end md:justify-start md:gap-10 md:px-11 md:pt-9 md:pb-11 min-h-[calc(100svh-4.625rem)]">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
-            {/* Phones never see the portrait, so they get a face here instead
-                — cropped from the photo the cut-out was taken from, so the two
-                viewports show the same shot. Not the cut-out itself: its
-                transparent margin would punch holes in a rounded-full disc. */}
-            <Image
-              src="/avatar-sm.webp"
-              alt=""
-              width={128}
-              height={128}
-              loading="lazy"
-              className="h-11 w-11 shrink-0 rounded-full border border-white/15 md:hidden"
-            />
             <span className="text-accent-bright flex min-w-0 items-center gap-2 font-mono text-[0.6875rem] tracking-[0.16em] uppercase">
               <span className="bg-accent-bright ember-pulse h-1.5 w-1.5 rounded-full" />
               {availability}

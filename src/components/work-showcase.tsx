@@ -133,7 +133,12 @@ export function WorkShowcase({
         className="mx-auto w-full max-w-5xl px-6 py-8 md:px-11 md:py-9"
       >
         <Reveal className="flex items-baseline justify-between">
-          <h2 className="m-0 text-[0.9375rem] font-bold tracking-[0.02em]">
+          {/* Bigger than the rows it introduces and bigger than the services cards
+              above it, on a phone. At 15px it was the smallest heading in a
+              stack that ran 17px services and 19px project titles — the label
+              of the most important section on the page, losing to both.
+              Unchanged from md. */}
+          <h2 className="m-0 text-[1.3125rem] font-bold tracking-[-0.01em] md:text-[0.9375rem] md:tracking-[0.02em]">
             {heading}
           </h2>
           <span className="text-muted-foreground font-mono text-[0.6875rem] md:text-[0.71875rem]">

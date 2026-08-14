@@ -22,6 +22,8 @@ import { skillGroups } from "@/lib/resume";
  */
 
 const PROMPT = "visitor@yushko.dev:~$";
+/** What the input row shows below `sm`, where the full one eats the line. */
+const SHORT_PROMPT = "~$";
 
 /** The event the footer's mark dispatches — the same shape the canvas already
  * uses for click bursts, rather than a second mechanism for the same job. */
@@ -604,7 +606,14 @@ export function Terminal() {
             }}
             className="flex items-center gap-2 border-t border-white/[0.08] px-4 py-3"
           >
-            <span aria-hidden className="text-accent-bright shrink-0">
+              {/* Short where the line is short. Measured at 375px, the full prompt
+                took 150px of a 375px row — 40% of it — and left 185px to type
+                into. A shell's prompt is a display choice, and the transcript
+                below still carries the whole thing. */}
+            <span aria-hidden className="text-accent-bright shrink-0 sm:hidden">
+              {SHORT_PROMPT}
+            </span>
+            <span aria-hidden className="text-accent-bright hidden shrink-0 sm:inline">
               {PROMPT}
             </span>
             <input

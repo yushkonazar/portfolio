@@ -270,7 +270,10 @@ export function PortraitCard({ name }: { name: string }) {
 
   return (
     // `portrait-enter` keeps its own element, above everything the card does.
-    <div className="portrait-enter relative hidden shrink-0 md:block">
+    // No longer desktop-only. The phone was getting a 44px round crop of the same
+    // photograph beside the availability line — a thumbnail standing in for the
+    // one object on this page that is meant to be handled.
+    <div className="portrait-enter relative shrink-0">
       <div
         ref={frame}
         onPointerMove={onPointerMove}
@@ -305,7 +308,14 @@ export function PortraitCard({ name }: { name: string }) {
               width={640}
               height={960}
               priority
-              className="portrait-drift block h-[380px] w-auto"
+              /* 280 on a phone, 450 from md. The photo is 640x960, so those are
+               187 and 300 wide. The larger figure is what the QR panel on the
+               back needed: at 253 wide the panel had 204px for its ticket and
+               9.5px for its hint, and it read as cramped because it was. At 300
+               the ticket is 252 — a quarter more code for the same card. The
+               headline keeps 37px of headroom in the column that leaves, measured
+               at 768 where that column is narrowest. */
+            className="portrait-drift block h-[280px] w-auto md:h-[450px]" 
             />
 
             {/* Sinks the photograph's own edges so it reads as printed into
