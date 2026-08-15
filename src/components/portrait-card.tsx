@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import { QrPanel } from "./qr-panel";
 
 /**
@@ -69,7 +70,15 @@ type Tilt = { tiltX: number; tiltY: number; glareX: number; glareY: number };
 const LEVEL: Tilt = { tiltX: 0, tiltY: 0, glareX: 0, glareY: 0 };
 const AXES = ["tiltX", "tiltY", "glareX", "glareY"] as const;
 
-export function PortraitCard({ name }: { name: string }) {
+/** `className` lands on the outer element so the hero can place this in a grid
+ * area without wrapping it in another div to hold the placement. */
+export function PortraitCard({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) {
   const t = useTranslations("PortraitCard");
   const frame = useRef<HTMLDivElement>(null);
   const pointer = useRef<{ x: number; y: number } | null>(null);
@@ -299,7 +308,7 @@ export function PortraitCard({ name }: { name: string }) {
     // No longer desktop-only. The phone was getting a 44px round crop of the same
     // photograph beside the availability line — a thumbnail standing in for the
     // one object on this page that is meant to be handled.
-    <div className="portrait-enter relative shrink-0">
+    <div className={cn("portrait-enter relative shrink-0", className)}>
       <div
         ref={frame}
         onPointerMove={onPointerMove}

@@ -392,6 +392,75 @@ html[data-type="larger"] {
   }
 
   /* Keeps the fracture animation off the headline. */
+  /* ── The hero's two arrangements ───────────────────────────────────────────
+     One DOM, two shapes, so the phone gets its own composition without a second
+     copy of the markup to keep in step.
+
+     On a phone: the availability line runs the full width, the name and role sit
+     left of the photograph, and the paragraph and buttons run the full width
+     underneath both. The row's height is whichever of the two is taller — the
+     card, at 210px against about 130px of name and role — so the text sits at the
+     top of it and the space below is where the hero breathes.
+
+     From `md` the card moves to a column of its own spanning every row, which is
+     the arrangement this page has always had, and it bottom-aligns so its foot
+     meets the buttons'.
+
+     Grid rather than flex, because this is a two-dimensional change: flex would
+     need the markup reordered per breakpoint, or duplicated. */
+  .hero-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "badge badge"
+      "name  card"
+      "intro intro"
+      "cta   cta";
+    align-items: start;
+  }
+
+  .hero-layout > .hero-badge {
+    grid-area: badge;
+  }
+  .hero-layout > .hero-name {
+    grid-area: name;
+  }
+  .hero-layout > .hero-intro {
+    grid-area: intro;
+  }
+  .hero-layout > .hero-cta {
+    grid-area: cta;
+  }
+  .hero-layout > .hero-card {
+    grid-area: card;
+  }
+
+  @media (width >= 48rem) {
+    .hero-layout {
+      grid-template-areas:
+        "badge card"
+        "name  card"
+        "intro card"
+        "cta   card";
+      /* The slack goes into the first row so the text is pushed down and its last
+         line meets the card's foot — which is what `items-end` did on the flex
+         version this replaced. Without it, grid spreads the difference between the
+         card and the shorter text stack across all four rows and the card ends up
+         23px below the buttons.
+
+         Measured at 1280 with this in place, the card's layout box and the button
+         row both end at 548. Their *bounding* boxes differ by 9px, which is
+         `portrait-drift` — a `scale(1.045)` on the photograph that paints 18px
+         larger than it lays out. That overflow predates the grid and is the point
+         of the drift. */
+      grid-template-rows: 1fr auto auto auto;
+    }
+
+    .hero-layout > .hero-card {
+      align-self: end;
+    }
+  }
+
   /* Keeps the fracture animation off the headline.
 
      The gradient is a desktop measure: it clears the left 56% of the hero because
